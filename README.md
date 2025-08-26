@@ -1,4 +1,4 @@
-# ERP Dashboard - The Benchmark Hifz Campus
+# ERP Dashboard - The Benchmark 
 
 A modern, responsive ERP (Enterprise Resource Planning) dashboard built with Next.js 15, TypeScript, and Tailwind CSS. This application replicates a professional HR management system interface with a clean, intuitive design.
 
