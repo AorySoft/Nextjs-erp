@@ -14,16 +14,26 @@ interface MenuSectionProps {
 interface MenuItemProps {
   label: string;
   isFavorite?: boolean;
+  href?: string;
   onToggleFavorite?: () => void;
 }
 
-function MenuItem({ label, isFavorite = false, onToggleFavorite }: MenuItemProps) {
+function MenuItem({ label, isFavorite = false, href, onToggleFavorite }: MenuItemProps) {
+  const handleClick = () => {
+    if (href) {
+      window.location.href = href;
+    }
+  };
+
   return (
-    <li className="flex items-center gap-1">
+    <li className={`flex items-center gap-1 ${href ? 'cursor-pointer hover:text-[#0a74da] transition-colors' : ''}`} onClick={href ? handleClick : undefined}>
       <FontAwesomeIcon icon={faBars} className="text-[12px] text-[#999]" />
       <span>{label}</span>
       <button 
-        onClick={onToggleFavorite}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleFavorite?.();
+        }}
         className="ml-auto text-[#999] cursor-pointer hover:text-[#0a74da] transition-colors"
         aria-label={`${isFavorite ? 'Remove from' : 'Add to'} favorites`}
       >
@@ -53,6 +63,7 @@ export default function MenuSection({ section, className = "" }: MenuSectionProp
                 <MenuItem 
                   key={itemIndex}
                   label={item.label}
+                  href={item.href}
                   isFavorite={item.isFavorite}
                   onToggleFavorite={() => {
                     // Handle favorite toggle logic here

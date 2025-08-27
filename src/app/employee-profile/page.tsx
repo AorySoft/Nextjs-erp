@@ -1,29 +1,33 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import DashboardLayout from '@/components/shared/DashboardLayout';
 import DataTable from '@/components/ui/DataTable';
-import { Edit, Trash, View } from 'lucide-react';
+import EmployeeProfileModal from '@/components/ui/EmployeeProfileModal';
+import { Edit, Trash, View, Plus } from 'lucide-react';
+import { EmployeeData } from '@/services/api';
+
+interface TableEmployee {
+  entity: string;
+  employeeId: string;
+  machineId: string;
+  employeeName: string;
+  empCategory: string;
+  department: string;
+  designation: string;
+  contact: string;
+  status: string;
+}
 
 const EmployeeProfile = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [employees, setEmployees] = useState<TableEmployee[]>([]);
   const columns = [
     {
       key: "action",
       label: "Action",
       searchable: false,
-      render: (row: any) => (
+      render: (row: unknown) => (
         <div className="flex gap-2">
-          {/* <button
-            className="px-2 py-1 bg-blue-500 text-white rounded"
-            onClick={() => alert(`Editing ${row.employeeName}`)}
-          >
-            Edit
-          </button>
-          <button
-            className="px-2 py-1 bg-red-500 text-white rounded"
-            onClick={() => alert(`Deleting ${row.employeeName}`)}
-          >
-            Delete
-          </button> */}
           <Trash size={20}/>
           <Edit size={20}/> 
           <View size={20}/>
@@ -43,7 +47,7 @@ const EmployeeProfile = () => {
     { key: "status", label: "Status", searchable: true },
   ];
 
-  const data = [
+  const data: TableEmployee[] = [
     {
       entity: "HR",
       employeeId: "E123",
@@ -68,11 +72,43 @@ const EmployeeProfile = () => {
     },
   ]
 
+  const handleSaveEmployee = (employeeData: EmployeeData) => {
+    // Add the new employee to the list
+    const newEmployee = {
+      entity: "HR",
+      employeeId: employeeData.name || '',
+      machineId: employeeData.machine_code || '',
+      employeeName: `${employeeData.first_name || ''} ${employeeData.last_name || ''}`.trim(),
+      empCategory: employeeData.custom_employment_category || '',
+      department: employeeData.department || '',
+      designation: employeeData.custom_employment_category || '',
+      contact: employeeData.contact_no || '',
+      status: "Active",
+    };
+    
+    setEmployees(prev => [...prev, newEmployee]);
+  };
+
   return (
     <DashboardLayout>
       <div className="p-4 h-[calc(100vh-120px)] overflow-y-auto">
-        <div>btn</div>
-        <DataTable columns={columns} data={data} />
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-semibold text-gray-800">Employee Profile</h1>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus size={20} />
+            New Employee
+          </button>
+        </div>
+        <DataTable columns={columns} data={[...data, ...employees]} />
+        
+        <EmployeeProfileModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSaveEmployee}
+        />
       </div>
     </DashboardLayout>
   );

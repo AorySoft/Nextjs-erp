@@ -6,12 +6,12 @@ interface Column {
   key: string;
   label: string;
   searchable?: boolean;
-  render?: (row: any, index: number) => React.ReactNode; // 👈 custom renderer
+  render?: (row: unknown, index: number) => React.ReactNode;
 }
 
 interface DataTableProps {
   columns: Column[];
-  data: any[];
+  data: unknown[];
 }
 
 const DataTable: React.FC<DataTableProps> = ({ columns, data }) => {
@@ -24,7 +24,7 @@ const DataTable: React.FC<DataTableProps> = ({ columns, data }) => {
   const filteredData = data.filter((row) =>
     columns.every((col) => {
       if (!filters[col.key]) return true;
-      return String(row[col.key] || "")
+      return String((row as Record<string, unknown>)[col.key] || "")
         .toLowerCase()
         .includes(filters[col.key].toLowerCase());
     })
@@ -69,8 +69,8 @@ const DataTable: React.FC<DataTableProps> = ({ columns, data }) => {
                       ? col.render(row, idx) // 👈 use custom renderer if provided
                       : col.key === "sno"
                       ? idx + 1
-                      : row[col.key] !== undefined
-                      ? row[col.key]
+                      : (row as Record<string, unknown>)[col.key] !== undefined
+                      ? String((row as Record<string, unknown>)[col.key])
                       : "-"}
                   </td>
                 ))}
