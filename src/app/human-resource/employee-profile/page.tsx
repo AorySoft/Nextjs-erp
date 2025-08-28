@@ -1,10 +1,17 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import DashboardLayout from '@/components/shared/DashboardLayout';
 import DataTable from '@/components/ui/DataTable';
 import EmployeeProfileModal from '@/components/ui/EmployeeProfileModal';
-import { Edit, Trash, View, Plus } from 'lucide-react';
+import { Edit, Trash, View, Plus, SearchIcon } from 'lucide-react';
 import { EmployeeData, employeeAPI } from '@/services/api';
+import MuiDialog from '@/components/ui/DialogBox';
+import Button from '@/components/ui/Button';
+import CustomButton from '@/components/ui/CustomButton';
+import { TextField } from '@mui/material';
+import CustomTextField from '@/components/ui/CustomTextField';
+import { defaultColor } from '@/utils/constant';
+import CustomSelectField from '@/components/ui/CustomSelectField';
 
 interface TableEmployee {
   name: string;
@@ -35,6 +42,11 @@ const EmployeeProfile = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [employees, setEmployees] = useState<TableEmployee[]>([]);
   const [loading, setLoading] = useState(false);
+  const [state,setState]=useReducer((state:any,newState:any)=>({...state,...newState}),{
+    employee_dialog:false,
+   
+    
+  })
 
   // Fetch employees from API when component mounts
   useEffect(() => {
@@ -126,7 +138,10 @@ const EmployeeProfile = () => {
               Refresh
             </button>
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+               // setIsModalOpen(true)
+                setState({employee_dialog:true})}
+              }
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
@@ -147,7 +162,50 @@ const EmployeeProfile = () => {
           onClose={() => setIsModalOpen(false)}
           onSave={handleSaveEmployee}
         />
+
       </div>
+      <MuiDialog
+        open={state?.employee_dialog}
+        onClose={(reason:any) => {
+          console.log("Dialog closed:", reason);
+          setState({employee_dialog:false});
+        }}
+        multiple_btn={true}
+        title="Delete item?"
+        // description="This action cannot be undone. Are/ ou sure?"
+        description={false}
+       
+        maxWidth="sm"
+      >
+        <div>
+        <CustomTextField
+      value={state?.employee_name}
+      onChange={(e:any) => setState({employee_name:e.target.value})}
+      required
+      error={!state?.employee_name}
+      startIcon={<SearchIcon color={defaultColor.main_blue} size={16}/>}
+      placeholder="Employee Name"
+      label="Employee Name" 
+      />
+      <CustomSelectField
+     options={[{value:"Teacher",label:"teacher",
+      
+     },
+     {value:"Admin",label:"Admin"}]}
+     value={state?.employee_name}
+     onChange={(e:any) => setState({employee_name:e.target.value})}
+      />
+
+        <div>
+          <p style={{ margin: 0 }}>
+            Deleting this item will remove it from the system immediately.
+          </p>
+        </div>
+        </div>
+       
+      </MuiDialog>
+
+     
     </DashboardLayout>
   );
 };
