@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBuilding, faUser, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faBuilding, faUser, faChevronRight, faBuilding as faCompany } from '@fortawesome/free-solid-svg-icons';
 import SearchInput from '../ui/SearchInput';
 import { NavigationItem } from '@/types';
 
@@ -33,13 +33,13 @@ export default function Sidebar({ className = "" }: SidebarProps) {
     <aside className={`flex flex-col bg-[#e2e6ea] w-[230px] min-w-[230px] border-r border-[#a0aec0] overflow-y-auto ${className}`}>
       {/* Logo Section */}
       <div className="flex justify-center items-center h-[120px] border-b border-[#a0aec0]">
-        <img 
-          src="https://storage.googleapis.com/a1aa/image/778b0ce9-718f-493d-8402-d1de9c92ef53.jpg"
-          alt="Company logo with blue and white colors, circular shape with letter e and dots"
-          className="w-20 h-20 object-contain"
-          width={80}
-          height={80}
-        />
+        <div className="flex flex-col items-center">
+          <FontAwesomeIcon 
+            icon={faCompany} 
+            className="text-4xl text-[#0a74da] mb-2"
+          />
+          <span className="text-lg font-bold text-[#0a74da]">NextERP</span>
+        </div>
       </div>
 
       {/* Search Section */}

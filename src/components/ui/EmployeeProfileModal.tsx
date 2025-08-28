@@ -37,7 +37,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
     date_of_birth: employeeData?.date_of_birth || '',
     custom_cnic: employeeData?.custom_cnic || '',
     custom_employment_category: employeeData?.custom_employment_category || '',
-    company: employeeData?.company || '',
+    company: 'The Benchmark', // Fixed company name as required by ERP system
     department: employeeData?.department || '',
     employment_type: employeeData?.employment_type || '',
     date_of_joining: employeeData?.date_of_joining || '',
@@ -136,7 +136,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
       date_of_birth: '',
       custom_cnic: '',
       custom_employment_category: '',
-      company: '',
+      company: 'The Benchmark', // Fixed company name as required by ERP system
       department: '',
       employment_type: '',
       date_of_joining: '',
@@ -304,6 +304,16 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
                       onChange={(e) => handleInputChange('machine_code', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                    <input
+                      type="text"
+                      value="The Benchmark"
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 text-gray-600 cursor-not-allowed"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Company is fixed to &quot;The Benchmark&quot; as required by the system</p>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -634,6 +644,16 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
                           className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                         />
                       </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Attendance Device ID</label>
+                      <input
+                        type="text"
+                        value={formData.attendance_device_id || ''}
+                        onChange={(e) => handleInputChange('attendance_device_id', e.target.value)}
+                        placeholder="Enter Device ID"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">

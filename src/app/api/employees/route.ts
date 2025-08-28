@@ -34,7 +34,8 @@ export async function GET() {
     console.log('Testing ERP API connection...');
     console.log('Auth headers:', getAuthHeaders());
     
-    const response = await apiClient.get('/resource/Employee', {
+    // Use the specific fields and limit as per your ERP API
+    const response = await apiClient.get('/resource/Employee?fields=["name", "attendance_device_id","employee_name", "branch", "designation", "department", "cell_number", "custom_employment_category","employment_type"]&limit=false', {
       headers: getAuthHeaders()
     });
     
@@ -105,10 +106,14 @@ export async function POST(request: NextRequest) {
     };
 
     console.log('Sending to ERP API with exact field names:', JSON.stringify(erpEmployeeData, null, 2));
+    console.log('ERP API URL:', `${API_BASE_URL}/resource/Employee`);
+    console.log('Request headers:', getAuthHeaders());
 
     const response = await apiClient.post('/resource/Employee', erpEmployeeData, {
       headers: getAuthHeaders()
     });
+    
+    console.log('ERP API Success Response:', response.data);
     return NextResponse.json(response.data);
   } catch (error) {
     console.error('Error creating employee:', error);

@@ -18,7 +18,7 @@ export const employeeProfilingSection: MenuSection = {
     {
       title: 'Profiling',
       items: [
-        { label: 'Employee Profile', isFavorite: false, href: '/employee-profile' },
+        { label: 'Employee Profile', isFavorite: false, href: '/human-resource/employee-profile' },
         { label: 'Employement', isFavorite: false }
       ]
     }

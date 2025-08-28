@@ -88,11 +88,23 @@ export const employeeAPI = {
 
   getEmployees: async () => {
     try {
-      const response = await apiClient.get('');
+      console.log('Frontend API: Fetching employees...');
+      console.log('Frontend API: Base URL:', apiClient.defaults.baseURL);
+      console.log('Frontend API: Full URL will be:', `${apiClient.defaults.baseURL}`);
+      
+      // Use the specific fields and limit as per your ERP API
+      const response = await apiClient.get('?fields=["name", "attendance_device_id","employee_name", "branch", "designation", "department", "cell_number", "custom_employment_category","employment_type"]&limit=false');
+      console.log('Frontend API: Success response:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Error fetching employees:', error);
+      console.error('Frontend API: Error fetching employees:', error);
       if (axios.isAxiosError(error)) {
+        console.error('Frontend API: Axios error details:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          url: error.config?.url,
+          baseURL: error.config?.baseURL
+        });
         const errorMessage = error.response?.data?.error || error.response?.data?.details || error.message;
         throw new Error(`API Error: ${errorMessage}`);
       }
