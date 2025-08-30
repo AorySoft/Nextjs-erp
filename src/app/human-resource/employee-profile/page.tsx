@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/shared/DashboardLayout";
 import DataTable from "@/components/ui/DataTable";
 import EmployeeProfileModal from "@/components/ui/EmployeeProfileModal";
 import { Edit, Trash, View, Plus, ChevronDown, } from "lucide-react";
-import { EmployeeData, employeeAPI } from "@/services/api";
+import { EmployeeData, api, employeeAPI } from "@/services/api";
 import MuiDialog from "@/components/ui/DialogBox";
 
 import {
@@ -413,12 +413,23 @@ const EmployeeProfile = () => {
   };
 
   // Fetch employees from API when component mounts
+  const fetchEmployessDesignation = async ()=>{
+    try {
+      // const response_designation= await api.get('/resource/Department?limit=100')
+      // console.log("Fetched employees from API:", response_designation);
+      const response_designation= await employeeAPI.getDesignation();
+      console.log("Fetched employees from API:", response_designation);
+    } catch (error) {
+     console.log("Error fetching employees:", error);
+      
+    }
+  }
+  //
   useEffect(() => {
     const fetchEmployees = async () => {
       try {
         setLoading(true);
         const apiEmployees = await employeeAPI.getEmployees();
-        console.log("Fetched employees from API:", apiEmployees);
 
         // Transform API response to match our TableEmployee interface
         if (apiEmployees && Array.isArray(apiEmployees.data)) {
@@ -445,6 +456,7 @@ const EmployeeProfile = () => {
     };
 
     fetchEmployees();
+    fetchEmployessDesignation();
   }, []);
   const columns = [
     {
@@ -494,7 +506,6 @@ const EmployeeProfile = () => {
 
     setEmployees((prev) => [...prev, newEmployee]);
   };
-  console.log(state, "asad");
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -546,7 +557,6 @@ const EmployeeProfile = () => {
       <MuiDialog
         open={state?.employee_dialog}
         onClose={(reason: any) => {
-          console.log("Dialog closed:", reason);
           setState({ employee_dialog: false });
         }}
         multiple_btn={true}

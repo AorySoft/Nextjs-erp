@@ -1,7 +1,7 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // Use local API routes to avoid CORS issues
-const API_BASE_URL = '/api/employees';
+const API_BASE_URL = '/api';
 
 // Create axios instance with default config
 const apiClient = axios.create({
@@ -11,6 +11,7 @@ const apiClient = axios.create({
   },
   timeout: 10000, // 10 seconds timeout
 });
+
 
 export interface EmployeeData {
   name?: string;
@@ -93,7 +94,7 @@ export const employeeAPI = {
       console.log('Frontend API: Full URL will be:', `${apiClient.defaults.baseURL}`);
       
       // Use the specific fields and limit as per your ERP API
-      const response = await apiClient.get('?fields=["name", "attendance_device_id","employee_name", "branch", "designation", "department", "cell_number", "custom_employment_category","employment_type"]&limit=false');
+      const response = await apiClient.get('/employees?fields=["name", "attendance_device_id","employee_name", "branch", "designation", "department", "cell_number", "custom_employment_category","employment_type"]&limit=false');
       console.log('Frontend API: Success response:', response.data);
       return response.data;
     } catch (error) {
@@ -112,6 +113,35 @@ export const employeeAPI = {
     }
   },
 
+
+  // getting designation
+  getDesignation: async () => {
+    try {
+      console.log('Frontend API: Fetching designation...');
+      console.log('Frontend API: Base URL:', apiClient.defaults.baseURL);
+      console.log('Frontend API: Full URL will be:', `${apiClient.defaults.baseURL}`);
+      
+      // Use the specific fields and limit as per your ERP API
+      const response = await apiClient.get('resource/Designation?limit=100');
+      console.log('Frontend API: Success response:', response.data);
+      return response?.data;
+    } catch (error) {
+      console.error('Frontend API: Error fetching designation:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Frontend API: Axios error details:', {
+          status: error?.response?.status,
+          data: error?.response?.data,
+          url: error?.config?.url,
+          baseURL: error?.config?.baseURL
+        });
+        const errorMessage = error?.response?.data?.error || error?.response?.data?.details || error?.message;
+        throw new Error(`API Error: ${errorMessage}`);
+      }
+      throw error;
+    }
+  },
+
+  //
   // Additional helper methods
   deleteEmployee: async (employeeId: string) => {
     try {
@@ -140,4 +170,46 @@ export const employeeAPI = {
       throw error;
     }
   }
+};
+
+
+
+//// new method for api calls
+// Generic request handler (optional, helps with typing + error handling)
+const request = async <T = any>(
+  method: "get" | "post" | "put" | "patch" | "delete",
+  url: string,
+  data?: any,
+  config?: AxiosRequestConfig
+): Promise<T> => {
+  try {
+    const response: AxiosResponse<T> = await apiClient.request({
+      method,
+      url,
+      data,
+      ...config,
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("API Error:", error?.response || error);
+    throw error?.response?.data || error;
+  }
+};
+
+// Export helpers
+export const api = {
+  get: <T = any>(url: string, config?: AxiosRequestConfig) =>
+    request<T>("get", url, undefined, config),
+
+  post: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) =>
+    request<T>("post", url, data, config),
+
+  put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) =>
+    request<T>("put", url, data, config),
+
+  patch: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) =>
+    request<T>("patch", url, data, config),
+
+  delete: <T = any>(url: string, config?: AxiosRequestConfig) =>
+    request<T>("delete", url, undefined, config),
 };
