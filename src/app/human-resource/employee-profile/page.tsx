@@ -418,9 +418,19 @@ const EmployeeProfile = () => {
       // const response_designation= await api.get('/resource/Department?limit=100')
       // console.log("Fetched employees from API:", response_designation);
       const response_designation= await employeeAPI.getDesignation();
-      console.log("Fetched employees from API:", response_designation);
+      console.log("Fetched designation from API:", response_designation);
     } catch (error) {
-     console.log("Error fetching employees:", error);
+     console.log("Error fetching designation:", error);
+      
+    }
+  }
+
+  const fetchEmployessDepartment = async ()=>{
+    try {
+      const response_department = await employeeAPI.getDepartment();
+      console.log("Fetched department from API:", response_department);
+    } catch (error) {
+     console.log("Error fetching department:", error);
       
     }
   }
@@ -457,6 +467,7 @@ const EmployeeProfile = () => {
 
     fetchEmployees();
     fetchEmployessDesignation();
+    fetchEmployessDepartment();
   }, []);
   const columns = [
     {
