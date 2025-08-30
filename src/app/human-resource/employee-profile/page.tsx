@@ -1,17 +1,27 @@
 "use client";
-import React, { useState, useEffect, useReducer } from 'react';
-import DashboardLayout from '@/components/shared/DashboardLayout';
-import DataTable from '@/components/ui/DataTable';
-import EmployeeProfileModal from '@/components/ui/EmployeeProfileModal';
-import { Edit, Trash, View, Plus, SearchIcon } from 'lucide-react';
-import { EmployeeData, employeeAPI } from '@/services/api';
-import MuiDialog from '@/components/ui/DialogBox';
-import Button from '@/components/ui/Button';
-import CustomButton from '@/components/ui/CustomButton';
-import { TextField } from '@mui/material';
-import CustomTextField from '@/components/ui/CustomTextField';
-import { defaultColor } from '@/utils/constant';
-import CustomSelectField from '@/components/ui/CustomSelectField';
+import React, { useState, useEffect, useReducer } from "react";
+import DashboardLayout from "@/components/shared/DashboardLayout";
+import DataTable from "@/components/ui/DataTable";
+import EmployeeProfileModal from "@/components/ui/EmployeeProfileModal";
+import { Edit, Trash, View, Plus, SearchIcon, ChevronDown, } from "lucide-react";
+import { EmployeeData, employeeAPI } from "@/services/api";
+import MuiDialog from "@/components/ui/DialogBox";
+
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Grid,
+  TextField,
+  Box,
+  Tabs,
+  Tab,
+  Typography,
+} from "@mui/material";
+import CustomTextField from "@/components/ui/CustomTextField";
+import { defaultColor } from "@/utils/constant";
+import CustomSelectField from "@/components/ui/CustomSelectField";
+import CustomDateInputField from "@/components/ui/DatePicker";
 
 interface TableEmployee {
   name: string;
@@ -24,7 +34,31 @@ interface TableEmployee {
   custom_employment_category: string;
   employment_type: string;
 }
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
 
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box style={{ padding: "10px" }}>
+          <Typography>{children}</Typography>
+        </Box>
+      )}
+    </div>
+  );
+}
 // Interface for API response employee data
 interface APIEmployee {
   name?: string;
@@ -38,15 +72,347 @@ interface APIEmployee {
   employment_type?: string;
 }
 
+
+//
+const formFields = [
+  {
+    input_name: "emp_id",
+    input_label: "Employee ID",
+    placeholder: "Enter employee id",
+    type: "text",
+    required: true,
+    startIcon: <></>,
+    grid_size: 6,
+    isDisable:true
+  },
+  {
+    input_name: "short_code",
+    input_label: "Short Code",
+    placeholder: "Enter short code",
+    type: "text",
+    required: true,
+    startIcon: <></>,
+    grid_size: 6,
+    isDisable:false
+
+  },
+  {
+    input_name: "machine_code",
+    input_label: "Machine Code",
+    placeholder: "Enter machine code",
+    type: "text",
+    required: true,
+    startIcon: <></>,
+    grid_size: 6,
+    isDisable:false
+  },
+  {
+    input_name: "joining_date",
+    input_label: "Joining Date",
+    placeholder: "Enter joining date",
+    type: "date",
+    required: true,
+    startIcon: <></>,
+    grid_size: 6,
+    isDisable:false
+  },
+  {
+    input_name: "first_name",
+    input_label: "First Name",
+    placeholder: "Enter first name",
+    type: "text",
+    required: true,
+    startIcon: <></>,
+    grid_size: 12,
+    isDisable:false
+  },
+  {
+    input_name: "last_name",
+    input_label: "Last Name",
+    placeholder: "Enter last name",
+    type: "text",
+    required: true,
+    startIcon: <></>,
+    grid_size: 12,
+    isDisable:false
+  },
+
+  // ... add all 32 fields here
+];
+//
+
+
+
 const EmployeeProfile = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [employees, setEmployees] = useState<TableEmployee[]>([]);
   const [loading, setLoading] = useState(false);
-  const [state,setState]=useReducer((state:any,newState:any)=>({...state,...newState}),{
-    employee_dialog:false,
-   
-    
-  })
+    const [activeTab, setActiveTab] = useState<'personal' | 'employment'>('personal');
+    const [value, setValue] = React.useState(0);
+
+  const [state, setState] = useReducer(
+    (state: any, newState: any) => ({ ...state, ...newState }),
+    {
+      // personal information
+       personalFormFields : [
+        {
+          input_name: "birth_date",
+          input_label: "Birth Date",
+          placeholder: "Enter birth date",
+          type: "date",
+          required: true,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false
+        },
+        {
+          input_name: "gender",
+          input_label: "Gender",
+          placeholder: "Enter gender",
+          type: "select",
+          required: true,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false,
+          options: [
+            { value: "male", label: "Male" },
+            { value: "female", label: "Female" },
+            { value: "other", label: "Other" },
+          ],
+        },
+        {
+          input_name: "nic",
+          input_label: "CNIC",
+          placeholder: "Enter CNIC",
+          type: "text",
+          required: true,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false
+
+        },
+
+        {
+          input_name: "blood_group",
+          input_label: "Blood Group",
+          placeholder: "Enter blood group",
+          type: "select",
+          required: false,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false,
+          options: [
+            { value: "A+", label: "A+" },
+            { value: "A-", label: "A-" },
+            { value: "B+", label: "B+" },
+            { value: "B-", label: "B-" },
+            { value: "AB+", label: "AB+" },
+            { value: "AB-", label: "AB-" },
+            { value: "O+", label: "O+" },
+            { value: "O-", label: "O-" },
+          ],
+        },
+        {
+          input_name: "nationality",
+          input_label: "Nationality",
+          placeholder: "Enter nationality",
+          type: "select",
+          required: true,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false,
+          options: [
+            { value: "pakistan", label: "Pakistan" },
+            { value: "other", label: "Other" },
+          ],
+        },
+        {
+          input_name: "birth_country",
+          input_label: "Birth Country",
+          placeholder: "Enter birth country",
+          type: "select",
+          required: true,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false,
+          options: [
+            { value: "pakistan", label: "Pakistan" },
+            { value: "other", label: "Other" },
+          ],
+        },
+
+        {
+          input_name: "contact_no",
+          input_label: "Contact No",
+          placeholder: "Enter contact no",
+          type: "text",
+          required: true,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false
+      
+        },
+        {
+          input_name: "whatsapp_no",
+          input_label: "Whatsapp No",
+          placeholder: "Enter whatsapp no",
+          type: "text",
+          required: false,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false
+        },
+       
+       
+      
+        // ... add all 32 fields here
+      ],
+      //
+      employmentFormFields : [
+        {
+          input_name: "emp_type",
+          input_label: "Employment Type",
+          placeholder: "Enter employment type",
+          type: "select",
+          required: true,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false,
+          options: [
+            { value: "permanent", label: "Permanent" },
+            { value: "contract", label: "Contract" },
+            { value: "other", label: "Other" },
+          ],
+        },
+        {
+          input_name: "emp_category",
+          input_label: "Employment Category",
+          placeholder: "Enter employment category",
+          type: "select",
+          required: true,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false,
+          options: [
+            { value: "permanent", label: "Permanent" },
+            { value: "contract", label: "Contract" },
+            { value: "other", label: "Other" },
+          ],
+        },
+        {
+          input_name: "reporting_to",
+          input_label: "Reporting To",
+          placeholder: "Enter reporting to",
+          type: "select",
+          required: false,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false,
+          options: [
+            { value: "asad  ", label: "Asad" },
+            { value: "ali", label: "Ali" },
+            { value: "other", label: "Other" },
+          ],
+        },
+
+        {
+          type:"date",
+          input_name: "appointment_date",
+          input_label: "Appointment Date",
+          placeholder: "Enter appointment date",
+          required: false,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false
+        },
+        {
+          input_name: "emp_grade",
+          input_label: "Reporting To",
+          placeholder: "Enter reporting to",
+          type: "select",
+          required: true,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false,
+          options: [
+            { value: "12", label: "12" },
+            { value: "11", label: "11" },
+            { value: "10", label: "10" },
+          ],
+        },
+        {
+          input_name: "emp_department",
+          input_label: "Department",
+          placeholder: "Enter department",
+          type: "select",
+          required: true,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false
+        },
+        
+        {
+          input_name: "emp_designation",
+          input_label: "Designation",
+          placeholder: "Enter designation",
+          type: "select",
+          required: true,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false,
+          options: [
+            { value: "Manager", label: "Manager" },
+            { value: "Team Lead", label: "Team Lead" },
+            { value: "Developer", label: "Developer" },
+          ],
+
+        },
+        
+        {
+          input_name: "emp_site",
+          input_label: "Site",
+          placeholder: "Enter site",
+          type: "select",
+          required: true,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false,
+          options: [
+            { value: "site1", label: "Site 1" },
+            { value: "site2", label: "Site 2" },
+            { value: "site3", label: "Site 3" },
+          ],
+        },
+        {
+          input_name: "emp_status",
+          input_label: "Status",
+          placeholder: "Enter status",
+          type: "select",
+          required: true,
+          startIcon: <></>,
+          grid_size: 4,
+          isDisable:false,
+          options: [
+            { value: "active", label: "Active" },
+            { value: "inactive", label: "Inactive" },
+          ],
+
+        },
+
+        
+       
+       
+      
+        // ... add all 32 fields here
+      ],
+      //
+      employee_dialog: false,
+      employee_name: "",
+    }
+  );
+  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+    setValue(newValue);
+  };
 
   // Fetch employees from API when component mounts
   useEffect(() => {
@@ -54,25 +420,27 @@ const EmployeeProfile = () => {
       try {
         setLoading(true);
         const apiEmployees = await employeeAPI.getEmployees();
-        console.log('Fetched employees from API:', apiEmployees);
-        
+        console.log("Fetched employees from API:", apiEmployees);
+
         // Transform API response to match our TableEmployee interface
         if (apiEmployees && Array.isArray(apiEmployees.data)) {
-          const transformedEmployees = apiEmployees.data.map((emp: APIEmployee) => ({
-            name: emp.name || '',
-            attendance_device_id: emp.attendance_device_id || '',
-            employee_name: emp.employee_name || '',
-            branch: emp.branch || '',
-            designation: emp.designation || '',
-            department: emp.department || '',
-            cell_number: emp.cell_number || '',
-            custom_employment_category: emp.custom_employment_category || '',
-            employment_type: emp.employment_type || '',
-          }));
+          const transformedEmployees = apiEmployees.data.map(
+            (emp: APIEmployee) => ({
+              name: emp.name || "",
+              attendance_device_id: emp.attendance_device_id || "",
+              employee_name: emp.employee_name || "",
+              branch: emp.branch || "",
+              designation: emp.designation || "",
+              department: emp.department || "",
+              cell_number: emp.cell_number || "",
+              custom_employment_category: emp.custom_employment_category || "",
+              employment_type: emp.employment_type || "",
+            })
+          );
           setEmployees(transformedEmployees);
         }
       } catch (error) {
-        console.error('Error fetching employees:', error);
+        console.error("Error fetching employees:", error);
       } finally {
         setLoading(false);
       }
@@ -87,12 +455,11 @@ const EmployeeProfile = () => {
       searchable: false,
       render: () => (
         <div className="flex gap-2">
-          <Trash size={20}/>
-          <Edit size={20}/> 
-          <View size={20}/>
+          <Trash size={20} />
+          <Edit size={20} />
+          <View size={20} />
         </div>
       ),
-    
     },
     { key: "sno", label: "S.no", searchable: false },
     { key: "name", label: "Employee ID", searchable: true },
@@ -102,34 +469,49 @@ const EmployeeProfile = () => {
     { key: "designation", label: "Designation", searchable: true },
     { key: "department", label: "Department", searchable: true },
     { key: "cell_number", label: "Contact", searchable: true },
-    { key: "custom_employment_category", label: "Emp Category", searchable: true },
+    {
+      key: "custom_employment_category",
+      label: "Emp Category",
+      searchable: true,
+    },
     { key: "employment_type", label: "Employment Type", searchable: true },
   ];
-
-  // Static data removed - now fetching from API
 
   const handleSaveEmployee = (employeeData: EmployeeData) => {
     // Add the new employee to the list
     const newEmployee: TableEmployee = {
-      name: employeeData.name || employeeData.first_name || '',
-      attendance_device_id: employeeData.attendance_device_id || employeeData.machine_code || '',
-      employee_name: `${employeeData.first_name || ''} ${employeeData.last_name || ''}`.trim(),
+      name: employeeData.name || employeeData.first_name || "",
+      attendance_device_id:
+        employeeData.attendance_device_id || employeeData.machine_code || "",
+      employee_name: `${employeeData.first_name || ""} ${
+        employeeData.last_name || ""
+      }`.trim(),
       branch: employeeData.company || "The Benchmark",
-      designation: employeeData.designation || '',
-      department: employeeData.department || '',
-      cell_number: employeeData.contact_no || '',
-      custom_employment_category: employeeData.custom_employment_category || '',
-      employment_type: employeeData.employment_type || '',
+      designation: employeeData.designation || "",
+      department: employeeData.department || "",
+      cell_number: employeeData.contact_no || "",
+      custom_employment_category: employeeData.custom_employment_category || "",
+      employment_type: employeeData.employment_type || "",
     };
-    
-    setEmployees(prev => [...prev, newEmployee]);
-  };
 
+    setEmployees((prev) => [...prev, newEmployee]);
+  };
+  console.log(state, "asad");
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setState((prev: any) => ({
+      ...prev,
+      [name]: value, // dynamically update field by input name
+    }));
+  };
   return (
     <DashboardLayout>
       <div className="p-4 h-[calc(100vh-120px)] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-semibold text-gray-800">Employee Profile</h1>
+          <h1 className="text-2xl font-semibold text-gray-800">
+            Employee Profile
+          </h1>
           <div className="flex gap-2">
             <button
               onClick={() => window.location.reload()}
@@ -139,10 +521,9 @@ const EmployeeProfile = () => {
             </button>
             <button
               onClick={() => {
-               setIsModalOpen(true)
-                // setState({employee_dialog:true})
-              }
-              }
+                // setIsModalOpen(true);
+                setState({ employee_dialog: true });
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
@@ -157,56 +538,280 @@ const EmployeeProfile = () => {
         ) : (
           <DataTable columns={columns} data={employees} />
         )}
-        
+
         <EmployeeProfileModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSave={handleSaveEmployee}
         />
-
       </div>
       <MuiDialog
         open={state?.employee_dialog}
-        onClose={(reason:any) => {
+        onClose={(reason: any) => {
           console.log("Dialog closed:", reason);
-          setState({employee_dialog:false});
+          setState({ employee_dialog: false });
         }}
         multiple_btn={true}
-        title="Delete item?"
+        title="Employee Profile"
         // description="This action cannot be undone. Are/ ou sure?"
         description={false}
-       
-        maxWidth="sm"
+        maxWidth="lg"
       >
-        <div>
-        <CustomTextField
-      value={state?.employee_name}
-      onChange={(e:any) => setState({employee_name:e.target.value})}
-      required
-      error={!state?.employee_name}
-      startIcon={<SearchIcon color={defaultColor.main_blue} size={16}/>}
-      placeholder="Employee Name"
-      label="Employee Name" 
-      />
-      <CustomSelectField
-     options={[{value:"Teacher",label:"teacher",
-      
-     },
-     {value:"Admin",label:"Admin"}]}
-     value={state?.employee_name}
-     onChange={(e:any) => setState({employee_name:e.target.value})}
-      />
-
-        <div>
-          <p style={{ margin: 0 }}>
-            Deleting this item will remove it from the system immediately.
-          </p>
-        </div>
-        </div>
+        <div id="employee_profile-parent">
+          <Accordion defaultExpanded>
+            <AccordionSummary
+              sx={{ margin: 0, backgroundColor: defaultColor.main_grey }}
+              expandIcon={<ChevronDown />}
+              aria-controls="basic-info-content"
+              id="basic-info-header"
+            >
+              <Typography
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  fontFamily: "sans-serif",
+                  margin: 0,
+                }}
+              >
+                Basic Information
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails
+              sx={{ margin: 0, backgroundColor: defaultColor.main_grey }}
+            >
+              <Grid container spacing={2}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6,
+                  }}
+                  container
+                  spacing={2}
+                  key="employee_data"
+                >
+                  {formFields?.map((field: any) => {
+                    return (
+                      <Grid
+                        size={{
+                          xs: 12,
+                          md: field.grid_size,
+                        }}
+                      >
+                        {field?.type === "date" ? (
+                          <CustomDateInputField
+                            input_label={field.input_label}
+                            input_name={field.input_name}
+                            input_value={state[field.input_name]}
+                            onchange={(e: any) =>
+                              setState({
+                                ...state,
+                                [field.input_name]: e.target.value,
+                              })
+                            }
+                            required
+                          />
+                        ) : field?.type === "select" ? (
+                          <CustomSelectField
+                            name="country"
+                            label={field.input_label}
+                            value={state[field.input_name]}
+                            onChange={(e) =>
+                              setState({
+                                ...state,
+                                [field.input_name]: e.target.value,
+                              })
+                            }
+                            placeholder="Pays"
+                            options={field.options}
+                          />
+                        ) : (
+                          <CustomTextField
+                            input_value={state[field.input_name]}
+                            onchange={(e: any) =>
+                              setState({
+                                ...state,
+                                [field.input_name]: e.target.value,
+                              })
+                            }
+                            required
+                            input_name={field.input_name}
+                            error={!state[field.input_name]}
+                            startIcon={field.startIcon}
+                            placeholder={field.placeholder}
+                            input_label={field.input_label}
+                            isDisable={field.isDisable}
+                          />
+                        )}
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6,
+                  }}
+                  id="employee_data_img"
+                ></Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+          <Box sx={{ width: "100%" }}>
+      {/* Tabs header */}
+      <Tabs value={value} onChange={handleChange} aria-label="basic tabs example">
+        <Tab label="Personal Information" />
+        <Tab label="Employment " />
        
-      </MuiDialog>
+      </Tabs>
 
+      {/* Tab panels */}
+      <TabPanel value={value} index={0}>
+      <Grid container spacing={2}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 12,
+                  }}
+                  container
+                  spacing={2}
+                  key="employee_data"
+                >
+                  {state?.personalFormFields?.map((field: any) => {
+                    return (
+                      <Grid
+                        size={{
+                          xs: 12,
+                          md: field.grid_size,
+                        }}
+                      >
+                        {field?.type === "date" ? (
+                          <CustomDateInputField
+                            input_label={field.input_label}
+                            input_name={field.input_name}
+                            input_value={state[field.input_name]}
+                            onchange={(e: any) =>
+                              setState({
+                                ...state,
+                                [field.input_name]: e.target.value,
+                              })
+                            }
+                            required
+                          />
+                        ) : field?.type === "select" ? (
+                          <CustomSelectField
+                            name="country"
+                            label={field.input_label}
+                            value={state[field.input_name]}
+                            onChange={(e) =>
+                              setState({
+                                ...state,
+                                [field.input_name]: e.target.value,
+                              })
+                            }
+                            placeholder="Pays"
+                            options={field.options}
+                          />
+                        ) : (
+                          <CustomTextField
+                            input_value={state[field.input_name]}
+                            onchange={(e: any) =>
+                              setState({
+                                ...state,
+                                [field.input_name]: e.target.value,
+                              })
+                            }
+                            required
+                            input_name={field.input_name}
+                            error={!state[field.input_name]}
+                            startIcon={field.startIcon}
+                            placeholder={field.placeholder}
+                            input_label={field.input_label}
+                            isDisable={field.isDisable}
+                          />
+                        )}
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+                </Grid>
+      </TabPanel>
+      <TabPanel value={value} index={1}>
+      {/* <Grid container spacing={2}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 12,
+                  }}
+                  container
+                  spacing={2}
+                  key="employement-data"
+                >
+                  {state?.employmentFormFields?.map((field: any) => {
+                    return (
+                      <Grid
+                        size={{
+                          xs: 12,
+                          md: field.grid_size,
+                        }}
+                      >
+                        {field?.type === "date" ? (
+                          <CustomDateInputField
+                            input_label={field.input_label}
+                            input_name={field.input_name}
+                            input_value={state[field.input_name]}
+                            onchange={(e: any) =>
+                              setState({
+                                ...state,
+                                [field.input_name]: e.target.value,
+                              })
+                            }
+                            required
+                          />
+                        ) : field?.type === "select" ? (
+                          <CustomSelectField
+                            name="country"
+                            label={field.input_label}
+                            value={state[field.input_name]}
+                            onChange={(e) =>
+                              setState({
+                                ...state,
+                                [field.input_name]: e.target.value,
+                              })
+                            }
+                            placeholder="Pays"
+                            options={field.options}
+                          />
+                        ) : (
+                          <CustomTextField
+                            input_value={state[field.input_name]}
+                            onchange={(e: any) =>
+                              setState({
+                                ...state,
+                                [field.input_name]: e.target.value,
+                              })
+                            }
+                            required
+                            input_name={field.input_name}
+                            error={!state[field.input_name]}
+                            startIcon={field.startIcon}
+                            placeholder={field.placeholder}
+                            input_label={field.input_label}
+                            isDisable={field.isDisable}
+                          />
+                        )}
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+                </Grid> */}
+      </TabPanel>
      
+    </Box>
+          
+                  {/* Content */}
+                 
+        </div>
+      </MuiDialog>
     </DashboardLayout>
   );
 };

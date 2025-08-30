@@ -1,192 +1,95 @@
+// LabeledSelect.tsx
 import React from "react";
-import {
-  FormControl,
-  Select,
-  MenuItem,
-  SelectProps,
-  Box,
-  Typography,
-} from "@mui/material";
-import { styled } from "@mui/material/styles";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore"; // custom dropdown icon
-import { height } from "@mui/system";
+import { Search } from "lucide-react";
 import { defaultColor } from "@/utils/constant";
-import { SearchIcon } from "lucide-react";
 
-interface CustomSelectFieldProps extends Omit<SelectProps, "label"> {
-  label?: string;
-  labelColor?: string;
-  borderColor?: string;
-  borderRadius?: string;
-  backgroundColor?: string;
-  focusBorderColor?: string;
-  errorBorderColor?: string;
-  options: Array<{ value: string; label: string }>;
-  readOnly?: boolean;
+type Option = { value: string; label: string };
+
+interface LabeledSelectProps {
+  label: string;
+  required?: boolean;
+  options: Option[];
+  value?: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  placeholder?: string;
+  name?: string;
+  id?: string;
 }
 
-const StyledFormControl = styled(FormControl)<
-  Omit<CustomSelectFieldProps, "options" | "readOnly">
->(
-  ({
-    borderColor = "#F4F3F6",
-    borderRadius = "8px",
-    backgroundColor = "#F4F3F6",
-    focusBorderColor = "#EAF3E8",
-    errorBorderColor = "#FF4C4C",
-  }) => ({
-    "& .MuiOutlinedInput-root": {
-      fontFamily: "sans-serif !important",
-      fontSize: "14px",
-      color: "#000000",
-      backgroundColor: "transparent",
-      borderRadius: "2px",
-      border: `1px solid #000000`,
-      transition: "all 0.2s ease-in-out",
-      padding: "0px",
-
-      "&:hover": {
-        //   borderColor: focusBorderColor,
-        //   boxShadow: `0 0 0 2px ${focusBorderColor}20`,
-      },
-
-      "&.Mui-focused": {
-        //   borderColor: focusBorderColor,
-        //   boxShadow: `0 0 0 2px ${focusBorderColor}30`,
-      },
-
-      "&.Mui-error": {
-        borderColor: errorBorderColor,
-        boxShadow: `0 0 0 2px ${errorBorderColor}30`,
-      },
-
-      "& .MuiSelect-select": {
-        //   padding: "12px 16px",
-        fontFamily: "sans-serif",
-        fontSize: "14px",
-        color: "#000000",
-
-        backgroundColor: "#F4F3F6",
-        height: "21px",
-        padding:"0px"
-      },
-
-      "& fieldset": {
-        border: "none",
-      },
-    },
-  })
-);
-
-const LabelWrapper = styled(Typography)<{ labelColor?: string }>(
-  ({ labelColor = "#070707" }) => ({
-    fontFamily: "montserrat-Regular !important",
-    fontSize: "14px !important",
-    color: "#808080 !important",
-    marginBottom: "4px",
-    marginLeft: "16px",
-  })
-);
-
-const StyledMenuItem = styled(MenuItem)({
-  fontFamily: " sans-serif",
-  fontSize: "14px",
-  color: "#070707",
-  "&:hover": {
-    backgroundColor: "#EAF3E8",
-  },
-  "&.Mui-selected": {
-    backgroundColor: "#EAF3E8 !important",
-    color: "#070707",
-    padding: "0px 8px", // adjust padding so text is centered
-
-    "&:hover": {
-      backgroundColor: "#EAF3E8",
-    },
-  },
-});
-
-const CustomSelectField: React.FC<CustomSelectFieldProps> = ({
+const LabeledSelect: React.FC<LabeledSelectProps> = ({
   label,
-  labelColor,
-  borderColor,
-  borderRadius,
-  backgroundColor,
-  focusBorderColor,
-  errorBorderColor,
+  required,
   options,
-  fullWidth = true,
-  readOnly = false,
-  ...props
+  value = "",
+  onChange,
+  placeholder = "Select…",
+  name,
+  id,
 }) => {
   return (
-    <Box sx={{ width: "100%" }}>
-      {label && <LabelWrapper labelColor={labelColor}>{label}</LabelWrapper>}
-      <StyledFormControl
-        fullWidth={fullWidth}
-        borderColor={borderColor}
-        borderRadius={borderRadius}
-        backgroundColor={backgroundColor}
-        focusBorderColor={focusBorderColor}
-        errorBorderColor={errorBorderColor}
+    <div style={{ width: "100%", marginBottom: "12px" }}>
+      {/* Label */}
+      <label
+        htmlFor={id}
+        style={{
+          display: "block",
+          fontSize: "12px",
+          fontFamily: "sans-serif",
+         fontWeight:600,color:defaultColor.main_grey_2,paddingBottom:10 ,
+        }}
       >
-        <Select
-          displayEmpty
-          readOnly={readOnly}
-          //   IconComponent={ExpandMoreIcon} // 👈 custom icon here
-          IconComponent={props.value ? () => null : ExpandMoreIcon}
-          renderValue={(selected: any) => {
+        {label}
+        {required && <span style={{ color: "red" }}> *</span>}
+      </label>
 
-            if (!selected) {
-              return (
-                <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span
-                  style={{
-                    color: "#000000",
-                    fontSize: "14px",
-                    fontFamily: "montserrat-Regular",
-                  }}
-                >
-                  Pays
-                </span>
-              </Box>
-              );
-            }
-            const option = options.find((opt) => opt.value === selected);
-            return (
-                <Box sx={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <SearchIcon color={defaultColor.main_blue} size="16" /> {/* 👈 Same icon for selected */}
-                  <span
-                    style={{
-                      color: "#000000",
-                      fontSize: "14px",
-                      fontFamily: "montserrat-Regular",
-                    }}
-                  >
-                    {option ? option.label : selected}
-                  </span>
-                </Box>
-              );
+      {/* Wrapper for icon + select */}
+      <div style={{ position: "relative", width: "100%" }}>
+        {/* Start Icon */}
+        <span
+          style={{
+            position: "absolute",
+            left: 8,
+            top: "50%",
+            transform: "translateY(-50%)",
+            pointerEvents: "none",
+            color: "#1d4ed8", // blue-ish like your screenshot
           }}
-          MenuProps={{
-            PaperProps: {
-              style: {
-                maxHeight: 240,
-                overflow: "auto",
-              },
-            },
-          }}
-          {...props}
         >
-          {options.map((option) => (
-            <StyledMenuItem key={option.value} value={option.value}>
-              {option.label}
-            </StyledMenuItem>
+          <Search size={14} />
+        </span>
+
+        {/* Native Select */}
+        <select
+          id={id}
+          name={name}
+          value={value}
+          onChange={onChange}
+          required={required}
+          style={{
+            width: "100%",
+            height: "26px",
+            background: "transparent",
+            border: "1px solid #000000", // light gray border like in screenshot
+            borderRadius: 4,
+            fontSize: "12px",
+            padding: "0 8px 0 28px", // left space for icon
+            outline: "none",
+            fontFamily: "sans-serif",
+          }}
+        >
+          <option value="" disabled hidden>
+            {placeholder}
+          </option>
+
+          {options.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
           ))}
-        </Select>
-      </StyledFormControl>
-    </Box>
+        </select>
+      </div>
+    </div>
   );
 };
 
-export default CustomSelectField;
+export default LabeledSelect;

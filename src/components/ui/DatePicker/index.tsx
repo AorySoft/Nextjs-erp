@@ -13,43 +13,32 @@ const CustomTextField = styled(TextField)({
     "& fieldset": {
       border: "none",
       fontFamily: "montserrat-Regular",
-      padding:"2px !important",
-    
+      padding: "2px !important",
     },
   },
 });
-export default function CustomInputField(props: any) {
+
+export default function CustomDateInputField(props: any) {
   const {
     startIcon,
     input_label,
     input_value,
     input_name,
     input_style,
-    placeHolder,
     onchange,
-    input_type,
     endIicon,
-    input_rows,
     required,
-    isMultiLine,
     readonly,
     isDisable,
     onKeyDown,
     Onfocus,
     customSx,
   } = props;
-  // const { sx: customSx, ...rest } = props;
 
   const inputRef = useRef<HTMLInputElement>(null);
   const theme = useTheme();
   const screen_1024 = useMediaQuery(theme.breakpoints.up(1025));
 
-  // Disable scroll behavior when focused
-  const preventScroll = (event: React.WheelEvent) => {
-    if (document.activeElement === inputRef.current) {
-      event.preventDefault();
-    }
-  };
   return (
     <form
       style={{ width: "100%" }}
@@ -58,14 +47,21 @@ export default function CustomInputField(props: any) {
     >
       {input_label && (
         <label
-          
-          style={{ fontSize: "12px",  display: "flex",fontWeight:600,color:defaultColor.main_grey_2,paddingBottom:10 ,fontFamily:'sans-serif'}}
+          style={{
+            fontSize: "12px",
+            display: "flex",
+            fontWeight: 600,
+            color: defaultColor.main_grey_2,
+            paddingBottom: 10,
+            fontFamily: "sans-serif",
+          }}
         >
           {input_label}
           {required ? <span style={{ color: "red" }}> *</span> : ""}
         </label>
       )}
       <CustomTextField
+        type="date" // 👈 always date type
         onFocus={(e) => {
           if (typeof Onfocus === "function") {
             Onfocus(e);
@@ -73,55 +69,32 @@ export default function CustomInputField(props: any) {
         }}
         ref={inputRef}
         disabled={isDisable}
-        multiline={isMultiLine}
-        type={input_type}
-        onWheel={preventScroll}
-        rows={input_rows}
         fullWidth
-        placeholder={placeHolder}
         onChange={onchange}
         margin="none"
         name={input_name}
         style={input_style}
         onKeyDown={onKeyDown}
-        id="outlined-start-adornment"
+        id="outlined-date-input"
+        value={input_value}
         sx={{
-         
-           
-          "& .MuiInputBase-input::placeholder": {
-            color: "#8F8E9C", // Change this to your desired color
-            opacity: 1, // Ensure the opacity is 1 to fully apply the color
-          },
-        
-          // border: "none",
-          border:"1px solid #000000",
-          borderRadius:"2px",
+          border: "1px solid #000000",
+          borderRadius: "2px",
           outline: "",
-          padding:"2px !important",
-
-
+          padding: "2px !important",
           fontFamily: "sans-serif",
           "& .MuiInputBase-input": {
             fontFamily: "sans-serif",
             ...customSx,
-
-          },
-          "& .MuiInputLabel-root": {
-            fontFamily: "sans-serif",
-            padding:"2px !important",
-
           },
           "& .MuiOutlinedInput-root": {
-            height: "21px" ,  
-            padding:"2px !important",
-
+            height: "21px",
+            padding: "2px !important",
             "& fieldset": {
-              fontFamily: " sans-serif",
+              fontFamily: "sans-serif",
             },
           },
-
         }}
-        value={input_value}
         InputProps={{
           readOnly: readonly,
           startAdornment: (
@@ -135,42 +108,34 @@ export default function CustomInputField(props: any) {
     </form>
   );
 }
-CustomInputField.defaultProps = {
+
+CustomDateInputField.defaultProps = {
   startIcon: "",
   endIicon: "",
   input_label: "",
   input_value: "",
   input_name: "",
-  placeHolder: "",
   onchange: {},
-  Onfocus: undefined, // Set default to undefined
-  input_type: "",
+  Onfocus: undefined,
   input_style: {
     fontFamily: "montserrat-Regular",
   },
-  input_rows: 1,
-  isMultiLine: false,
   readonly: false,
   isDisable: false,
-  required:false
+  required: false,
 };
 
-CustomInputField.propTypes = {
+CustomDateInputField.propTypes = {
   startIcon: PropTypes.any,
   endIicon: PropTypes.any,
   input_label: PropTypes.string,
   input_value: PropTypes.any,
   input_name: PropTypes.any,
-  input_style: PropTypes.any,
-  placeHolder: PropTypes.any,
   onchange: PropTypes.func,
-  input_type: PropTypes.string,
-  input_rows: PropTypes.number,
-  isMultiLine: PropTypes.bool,
   readonly: PropTypes.bool,
   isDisable: PropTypes.bool,
   onKeyDown: PropTypes.any,
   Onfocus: PropTypes.any,
   required: PropTypes.any,
-  customSx:PropTypes.any,
+  customSx: PropTypes.any,
 };

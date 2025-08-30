@@ -177,7 +177,7 @@ export default function MuiDialog({
           </DialogActions>}
 
             {/* Content */}
-            <DialogContent dividers sx={{ minWidth: 320, px: 3, py: 2, ...paperSx }}>
+            <DialogContent dividers sx={{ minWidth: 320, px: 1, py: 2, ...paperSx }}>
                 {renderContent ? renderContent() : children}
             </DialogContent>
 
