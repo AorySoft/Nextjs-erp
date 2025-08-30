@@ -3,7 +3,7 @@ import React, { useState, useEffect, useReducer } from "react";
 import DashboardLayout from "@/components/shared/DashboardLayout";
 import DataTable from "@/components/ui/DataTable";
 import EmployeeProfileModal from "@/components/ui/EmployeeProfileModal";
-import { Edit, Trash, View, Plus, SearchIcon, ChevronDown, } from "lucide-react";
+import { Edit, Trash, View, Plus, ChevronDown, } from "lucide-react";
 import { EmployeeData, employeeAPI } from "@/services/api";
 import MuiDialog from "@/components/ui/DialogBox";
 
@@ -12,7 +12,6 @@ import {
   AccordionDetails,
   AccordionSummary,
   Grid,
-  TextField,
   Box,
   Tabs,
   Tab,
@@ -147,7 +146,6 @@ const EmployeeProfile = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [employees, setEmployees] = useState<TableEmployee[]>([]);
   const [loading, setLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState<'personal' | 'employment'>('personal');
     const [value, setValue] = React.useState(0);
 
   const [state, setState] = useReducer(

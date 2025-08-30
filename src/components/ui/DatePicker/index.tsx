@@ -1,11 +1,11 @@
 /*
-  Created By Muhammad Hassaan
-  Date 15 April 2022
+  Created By Asad iqbal
+  Date 29 Aug 2025
 */
 import React, { useRef } from "react";
 import PropTypes from "prop-types";
 import { InputAdornment, TextField } from "@mui/material";
-import { styled, useMediaQuery, useTheme } from "@mui/system";
+import { styled, } from "@mui/system";
 import { defaultColor } from "@/utils/constant";
 
 const CustomTextField = styled(TextField)({
@@ -36,8 +36,8 @@ export default function CustomDateInputField(props: any) {
   } = props;
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const theme = useTheme();
-  const screen_1024 = useMediaQuery(theme.breakpoints.up(1025));
+//   const theme = useTheme();
+//   const screen_1024 = useMediaQuery(theme.breakpoints.up(1025));
 
   return (
     <form

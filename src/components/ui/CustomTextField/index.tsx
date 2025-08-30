@@ -5,7 +5,7 @@
 import React, { useRef } from "react";
 import PropTypes from "prop-types";
 import { InputAdornment, TextField } from "@mui/material";
-import { styled, useMediaQuery, useTheme } from "@mui/system";
+import { styled, } from "@mui/system";
 import { defaultColor } from "@/utils/constant";
 
 const CustomTextField = styled(TextField)({
@@ -41,8 +41,6 @@ export default function CustomInputField(props: any) {
   // const { sx: customSx, ...rest } = props;
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const theme = useTheme();
-  const screen_1024 = useMediaQuery(theme.breakpoints.up(1025));
 
   // Disable scroll behavior when focused
   const preventScroll = (event: React.WheelEvent) => {

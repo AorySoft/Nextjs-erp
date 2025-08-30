@@ -6,14 +6,13 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    IconButton,
+    
     Typography,
     Slide,
     Box,
     Paper,
     useTheme,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 import { TransitionProps } from "@mui/material/transitions";
 import { defaultColor } from "@/utils/constant";
 import { AlignJustify, Printer, Save, X } from "lucide-react";
