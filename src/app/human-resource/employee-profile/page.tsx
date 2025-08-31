@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/shared/DashboardLayout";
 import DataTable from "@/components/ui/DataTable";
 import EmployeeProfileModal from "@/components/ui/EmployeeProfileModal";
 import { Edit, Trash, View, Plus, ChevronDown } from "lucide-react";
-import { EmployeeData, api, employeeAPI } from "@/services/api";
+import { EmployeeData, employeeAPI } from "@/services/api";
 import MuiDialog from "@/components/ui/DialogBox";
 
 import {
@@ -21,7 +21,7 @@ import CustomTextField from "@/components/ui/CustomTextField";
 import { defaultColor } from "@/utils/constant";
 import CustomSelectField from "@/components/ui/CustomSelectField";
 import CustomDateInputField from "@/components/ui/DatePicker";
-import { Bounce, toast } from "react-toastify";
+import { toast } from "react-toastify";
 
 interface TableEmployee {
   name: string;
@@ -532,6 +532,7 @@ const EmployeeProfile = () => {
     fetchEmployees();
     fetchEmployessDesignation();
     fetchEmployessDepartment();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const columns = [
     {
@@ -563,7 +564,7 @@ const EmployeeProfile = () => {
   ];
  // function for cehcking mandotary fields
  const validateForm = (formFields: any[], formState: any) => {
-  for (let field of formFields) {
+  for (const field of formFields) {
     if (field.required&&field.isDisable==false) {
       const value = formState[field.input_name];
 
@@ -595,7 +596,7 @@ const EmployeeProfile = () => {
     // console.log("Form is valid, submitting...", state);   
     
   } catch (error) {
-    
+    console.error('Error creating employee:', error);
   }  
   }
 
@@ -621,10 +622,9 @@ const EmployeeProfile = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setState((prev: any) => ({
-      ...prev,
+    setState({
       [name]: value, // dynamically update field by input name
-    }));
+    });
   };
   return (
     <DashboardLayout>
@@ -668,7 +668,7 @@ const EmployeeProfile = () => {
       </div>
       <MuiDialog
         open={state?.employee_dialog}
-        onClose={(reason: any) => {
+        onClose={() => {
           setState({ employee_dialog: false });
         }}
         multiple_btn={true}
@@ -710,9 +710,10 @@ const EmployeeProfile = () => {
                   spacing={2}
                   key="employee_data"
                 >
-                  {state?.formFields?.map((field: any) => {
+                  {state?.formFields?.map((field: any, index: number) => {
                     return (
                       <Grid
+                        key={field.input_name || index}
                         size={{
                           xs: 12,
                           md: field.grid_size,
@@ -723,7 +724,7 @@ const EmployeeProfile = () => {
                             input_label={field.input_label}
                             input_name={field.input_name}
                             input_value={state[field.input_name]}
-                            onchange={(e: any) =>
+                            onchange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                               setState({
                                 ...state,
                                 [field.input_name]: e.target.value,
@@ -748,7 +749,7 @@ const EmployeeProfile = () => {
                         ) : (
                           <CustomTextField
                             input_value={state[field.input_name]}
-                            onchange={(e: any) =>
+                            onchange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                               setState({
                                 ...state,
                                 [field.input_name]: e.target.value,
@@ -800,9 +801,10 @@ const EmployeeProfile = () => {
                   spacing={2}
                   key="employee_data"
                 >
-                  {state?.personalFormFields?.map((field: any) => {
+                  {state?.personalFormFields?.map((field: any, index: number) => {
                     return (
                       <Grid
+                        key={field.input_name || `personal-${index}`}
                         size={{
                           xs: 12,
                           md: field.grid_size,
@@ -813,7 +815,7 @@ const EmployeeProfile = () => {
                             input_label={field.input_label}
                             input_name={field.input_name}
                             input_value={state[field.input_name]}
-                            onchange={(e: any) =>
+                            onchange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                               setState({
                                 ...state,
                                 [field.input_name]: e.target.value,
@@ -838,7 +840,7 @@ const EmployeeProfile = () => {
                         ) : (
                           <CustomTextField
                             input_value={state[field.input_name]}
-                            onchange={(e: any) =>
+                            onchange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                               setState({
                                 ...state,
                                 [field.input_name]: e.target.value,
@@ -870,9 +872,10 @@ const EmployeeProfile = () => {
                   spacing={2}
                   key="employement-data"
                 >
-                  {state?.employmentFormFields?.map((field: any) => {
+                  {state?.employmentFormFields?.map((field: any, index: number) => {
                     return (
                       <Grid
+                        key={field.input_name || `employment-${index}`}
                         size={{
                           xs: 12,
                           md: field.grid_size,
@@ -883,7 +886,7 @@ const EmployeeProfile = () => {
                             input_label={field.input_label}
                             input_name={field.input_name}
                             input_value={state[field.input_name]}
-                            onchange={(e: any) =>
+                            onchange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                               setState({
                                 ...state,
                                 [field.input_name]: e.target.value,
@@ -908,7 +911,7 @@ const EmployeeProfile = () => {
                         ) : (
                           <CustomTextField
                             input_value={state[field.input_name]}
-                            onchange={(e: any) =>
+                            onchange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                               setState({
                                 ...state,
                                 [field.input_name]: e.target.value,

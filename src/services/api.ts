@@ -203,10 +203,10 @@ export const employeeAPI = {
 
 //// new method for api calls
 // Generic request handler (optional, helps with typing + error handling)
-const request = async <T = any>(
+const request = async <T = unknown>(
   method: "get" | "post" | "put" | "patch" | "delete",
   url: string,
-  data?: any,
+  data?: unknown,
   config?: AxiosRequestConfig
 ): Promise<T> => {
   try {
@@ -217,26 +217,29 @@ const request = async <T = any>(
       ...config,
     });
     return response.data;
-  } catch (error: any) {
-    console.error("API Error:", error?.response || error);
-    throw error?.response?.data || error;
+  } catch (error: unknown) {
+    console.error("API Error:", error);
+    if (axios.isAxiosError(error)) {
+      throw error.response?.data || error;
+    }
+    throw error;
   }
 };
 
 // Export helpers
 export const api = {
-  get: <T = any>(url: string, config?: AxiosRequestConfig) =>
+  get: <T = unknown>(url: string, config?: AxiosRequestConfig) =>
     request<T>("get", url, undefined, config),
 
-  post: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) =>
+  post: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
     request<T>("post", url, data, config),
 
-  put: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) =>
+  put: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
     request<T>("put", url, data, config),
 
-  patch: <T = any>(url: string, data?: any, config?: AxiosRequestConfig) =>
+  patch: <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) =>
     request<T>("patch", url, data, config),
 
-  delete: <T = any>(url: string, config?: AxiosRequestConfig) =>
+  delete: <T = unknown>(url: string, config?: AxiosRequestConfig) =>
     request<T>("delete", url, undefined, config),
 };

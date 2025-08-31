@@ -18,7 +18,23 @@ const CustomTextField = styled(TextField)({
   },
 });
 
-export default function CustomDateInputField(props: any) {
+interface CustomDateInputFieldProps {
+  startIcon?: React.ReactNode;
+  input_label?: string;
+  input_value?: string;
+  input_name?: string;
+  input_style?: React.CSSProperties;
+  onchange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  endIicon?: React.ReactNode;
+  required?: boolean;
+  readonly?: boolean;
+  isDisable?: boolean;
+  onKeyDown?: (event: React.KeyboardEvent) => void;
+  Onfocus?: (event: React.FocusEvent) => void;
+  customSx?: Record<string, unknown>;
+}
+
+export default function CustomDateInputField(props: CustomDateInputFieldProps) {
   const {
     startIcon,
     input_label,

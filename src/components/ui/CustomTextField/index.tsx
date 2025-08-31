@@ -18,7 +18,29 @@ const CustomTextField = styled(TextField)({
     },
   },
 });
-export default function CustomInputField(props: any) {
+interface CustomInputFieldProps {
+  startIcon?: React.ReactNode;
+  input_label?: string;
+  input_value?: string;
+  input_name?: string;
+  input_style?: React.CSSProperties;
+  placeHolder?: string;
+  onchange?: (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  input_type?: string;
+  endIicon?: React.ReactNode;
+  input_rows?: number;
+  required?: boolean;
+  isMultiLine?: boolean;
+  readonly?: boolean;
+  isDisable?: boolean;
+  onKeyDown?: (event: React.KeyboardEvent) => void;
+  Onfocus?: (event: React.FocusEvent) => void;
+  customSx?: Record<string, unknown>;
+  error?: boolean;
+  placeholder?: string;
+}
+
+export default function CustomInputField(props: CustomInputFieldProps) {
   const {
     startIcon,
     input_label,

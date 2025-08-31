@@ -1,7 +1,19 @@
 import PropTypes from "prop-types";
 import MUIButton from "@mui/material/Button";
 import { useState } from "react";
-export default function CustomButton(props: any) {
+interface CustomButtonProps {
+  classesNames?: string;
+  onClick?: (e: React.MouseEvent<HTMLElement>) => void;
+  value?: React.ReactNode;
+  disable?: boolean;
+  style?: React.CSSProperties;
+  endIcon?: React.ReactNode;
+  startIcon?: React.ReactNode;
+  variant?: 'outlined' | 'text' | 'contained';
+  Href?: string;
+}
+
+export default function CustomButton(props: CustomButtonProps) {
   const {
     classesNames,
     onClick,
@@ -15,8 +27,8 @@ export default function CustomButton(props: any) {
   } = props;
   const [btn_disable, setDisable] = useState(false);
 
-  const onClickButton = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (props.onClick) {
+  const onClickButton = (e: React.MouseEvent<HTMLElement>) => {
+    if (onClick) {
       onClick(e);
     }
     setTimeout(() => {

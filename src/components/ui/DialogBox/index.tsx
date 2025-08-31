@@ -33,7 +33,7 @@ export interface MuiDialogProps {
     fullScreen?: boolean;
     disableBackdropClick?: boolean; // if true, clicking overlay won't call onClose
     disableEscapeKeyDown?: boolean;
-    paperSx?: any; // style override for the Paper
+    paperSx?: Record<string, unknown>; // style override for the Paper
     ariaLabelledBy?: string;
     ariaDescribedBy?: string;
     dialogId?: string; // optional id for accessibility tie-ins
@@ -78,8 +78,8 @@ export default function MuiDialog({
     const theme = useTheme();
 
     const handleClose = (
-        event: {},
-        reason: "backdropClick" | "escapeKeyDown" | "closeButton" = "closeButton"
+        event: object, 
+        reason: "backdropClick" | "escapeKeyDown" 
     ) => {
         if (disableBackdropClick && reason === "backdropClick") return;
         if (disableEscapeKeyDown && reason === "escapeKeyDown") return;
@@ -137,7 +137,7 @@ export default function MuiDialog({
                     </Box>
 
                     <X
-                        onClick={() => handleClose({}, "closeButton")}
+                        onClick={() => onClose("backdropClick")}
                         size={20}
                         stroke={defaultColor.main_blue}
                         color={defaultColor.main_blue}
@@ -154,23 +154,23 @@ export default function MuiDialog({
             <CustomButton
               value="Save"
               onClick={onSave}
-              sx={{fontSize:"11px",fontFamily:"sans-serif",textTransform:"none",color:defaultColor.main_blue}}
+              style={{fontSize:"11px",fontFamily:"sans-serif",textTransform:"none",color:defaultColor.main_blue}}
               startIcon={<Save size={16}/>}
             />
             <CustomButton
               value="Save & Close"
               onClick={onSaveAndClose}   
-              sx={{fontSize:"11px",fontFamily:"sans-serif",textTransform:"none",color:defaultColor.main_blue}}
+              style={{fontSize:"11px",fontFamily:"sans-serif",textTransform:"none",color:defaultColor.main_blue}}
               startIcon={<Save size={16}/>}  />  
              <CustomButton
               value="Print"
               onClick={onPrint}
-              sx={{fontSize:"11px",fontFamily:"sans-serif",textTransform:"none",color:defaultColor.main_blue}}
+              style={{fontSize:"11px",fontFamily:"sans-serif",textTransform:"none",color:defaultColor.main_blue}}
               startIcon={<Printer size={16}/>}  />
              <CustomButton
               value="Close"
               onClick={onCloseClick}
-              sx={{fontSize:"11px",fontFamily:"sans-serif",textTransform:"none",color:defaultColor.main_blue}}
+              style={{fontSize:"11px",fontFamily:"sans-serif",textTransform:"none",color:defaultColor.main_blue}}
               startIcon={<X size={16}/>}
             />
           </DialogActions>}
