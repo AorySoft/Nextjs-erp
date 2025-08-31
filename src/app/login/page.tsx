@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { Eye, EyeOff, User, Lock } from "lucide-react";
 import axios from "axios";
-import { useSearchParams } from 'next/navigation';
-import { saveSession } from '@/lib/auth';
-import { toast } from 'react-toastify';
-
+import { useSearchParams } from "next/navigation";
+import { saveSession } from "@/lib/auth";
+import { toast } from "react-toastify";
+import Image from "next/image";
+import backImg from "./Benckmark-logo.png";
 const LoginPage = () => {
   const [formData, setFormData] = useState({
     username: "",
@@ -26,7 +27,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     // Check for message in URL parameters
-    const message = searchParams.get('message');
+    const message = searchParams.get("message");
     if (message) {
       setInfoMessage(decodeURIComponent(message));
     }
@@ -55,14 +56,14 @@ const LoginPage = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
 
     // Clear field error when user starts typing
     if (fieldErrors[name as keyof typeof fieldErrors]) {
-      setFieldErrors(prev => ({
+      setFieldErrors((prev) => ({
         ...prev,
         [name]: "",
       }));
@@ -72,7 +73,7 @@ const LoginPage = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
@@ -87,10 +88,10 @@ const LoginPage = () => {
       if (response.data.message === "Logged In") {
         // Handle successful login
         console.log("Login successful:", response.data);
-        
+
         // Save session based on remember me preference
         saveSession(response.data, formData.rememberMe);
-        
+
         // Show success toast and message
         toast.success("Login successful, redirecting...", {
           position: "top-right",
@@ -98,13 +99,12 @@ const LoginPage = () => {
         });
         setSuccessMessage("Login successful, redirecting...");
         setError(""); // Clear any previous errors
-        
+
         // Redirect after brief delay to show success message
         setTimeout(() => {
           // Force reload to ensure cookies are available to middleware
           window.location.replace("/entity-selection");
         }, 1500);
-        
       } else {
         setError("Invalid credentials. Please try again.");
       }
@@ -114,7 +114,7 @@ const LoginPage = () => {
         if (error.response?.status === 401) {
           toast.error("Invalid username or password");
           setError("Invalid username or password");
-        } else if (error.code === 'ERR_NETWORK') {
+        } else if (error.code === "ERR_NETWORK") {
           toast.error("Server is unavailable. Please try again later.");
           setError("Server is unavailable. Please try again later.");
         } else {
@@ -127,7 +127,7 @@ const LoginPage = () => {
       }
     } finally {
       // Only set loading to false if we're not showing success message
-      if (!document.querySelector('.bg-green-50')) {
+      if (!document.querySelector(".bg-green-50")) {
         setIsLoading(false);
       }
     }
@@ -136,26 +136,40 @@ const LoginPage = () => {
   const isFormValid = formData.username.trim() && formData.password.length >= 6;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center p-4 transition-all duration-500 ease-in-out">
+    <div
+      className={`min-h-screen flex items-center justify-center p-4 transition-all duration-500 ease-in-out`}
+      style={{
+        backgroundImage: `url('https://bms.edap.com.pk/BlueGreyBG.149197dd2f3e8982.png')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundColor: "white",
+      }}
+    >
       {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
-        <div className="absolute bottom-20 right-20 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
-        <div className="absolute top-1/2 left-10 w-24 h-24 bg-white/5 rounded-full blur-lg"></div>
-      </div>
 
       {/* Login Card */}
-      <div className="relative w-full max-w-md transform transition-all duration-300 hover:scale-[1.02]">
-        <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-6 sm:p-8 border border-white/20 transition-all duration-300">
+      <div className="relative w-full max-w-md shadow-[ -2vh_1vh_5vh_#00000012 ] backdrop-blur-[16px] rounded-[8vh] bg-[#ffffffb5]">
+        <div className="bg-transparent p-6 sm:p-8 ">
           {/* Logo and Header */}
           <div className="text-center mb-8">
-            <div className="w-20 h-20 mx-auto mb-4 bg-gray-800 rounded-full flex items-center justify-center">
-              <div className="text-white text-xs font-bold">LOGO</div>
+            <div className="w-20 h-20 mx-auto mb-4 bg-transparent flex items-center justify-center">
+              <div className="text-white text-xs font-bold" >
+                <Image
+                  src={backImg}
+                  alt="Benchmark Logo"
+                  width={147}
+                  height={147}
+                  style={{width: "100%", height: "100%"}} 
+                />
+              </div>
             </div>
-            <div className="text-blue-600 font-bold text-sm mb-2">THE BENCHMARK</div>
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">WELCOME</h1>
-            <p className="text-gray-600 text-sm leading-relaxed">
-              Please Enter your Id and password to login into Edap Panel to view all the Entity statistics
+            {/* <div className="text-blue-600 font-bold text-sm mb-2">
+              THE BENCHMARK
+            </div> */}
+            <h1 className="text-2xl font-bold text-[#2878aa] mb-2">WELCOME</h1>
+            <p className="text-gray-600 text-[11px] leading-relaxed">
+              Please Enter your Id and password to login into Edap Panel to view
+              all the Entity statistics
             </p>
           </div>
 
@@ -181,20 +195,26 @@ const LoginPage = () => {
             {/* Username Field */}
             <div>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <User
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5"
+                  color="#000000"
+                  strokeWidth={2}
+                />
                 <input
                   type="text"
                   name="username"
                   value={formData.username}
                   onChange={handleInputChange}
                   placeholder="Enter Your Username"
-                  className={`w-full pl-12 pr-4 py-3 sm:py-4 border-2 rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base ${
-                    fieldErrors.username ? "border-red-300" : "border-blue-200"
+                  className={`w-full pl-12 pr-4 py-1 sm:py-1 border-2 rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-[#2878aa] focus:border-[#2878aa] text-sm sm:text-base text-black placeholder-gray-400 ${
+                    fieldErrors.username ? "border-red-300" : "border-[#2878aa]"
                   }`}
                 />
               </div>
               {fieldErrors.username && (
-                <p className="text-red-500 text-xs mt-1 ml-1">{fieldErrors.username}</p>
+                <p className="text-red-500 text-xs mt-1 ml-1">
+                  {fieldErrors.username}
+                </p>
               )}
             </div>
 
@@ -208,8 +228,8 @@ const LoginPage = () => {
                   value={formData.password}
                   onChange={handleInputChange}
                   placeholder="Enter Your Password"
-                  className={`w-full pl-12 pr-12 py-3 sm:py-4 border-2 rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm sm:text-base ${
-                    fieldErrors.password ? "border-red-300" : "border-blue-200"
+                  className={`w-full pl-12 pr-4 py-1 sm:py-1 border-2 rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-[#2878aa] focus:border-[#2878aa] text-sm sm:text-base text-black placeholder-gray-400 ${
+                    fieldErrors.password ? "border-red-300" : "border-[#2878aa]"
                   }`}
                 />
                 <button
@@ -217,11 +237,17 @@ const LoginPage = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
               {fieldErrors.password && (
-                <p className="text-red-500 text-xs mt-1 ml-1">{fieldErrors.password}</p>
+                <p className="text-red-500 text-xs mt-1 ml-1">
+                  {fieldErrors.password}
+                </p>
               )}
             </div>
 
@@ -235,7 +261,10 @@ const LoginPage = () => {
                 onChange={handleInputChange}
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
               />
-              <label htmlFor="rememberMe" className="ml-2 text-sm text-gray-600">
+              <label
+                htmlFor="rememberMe"
+                className="ml-2 text-sm text-gray-600"
+              >
                 Keep me signed in
               </label>
             </div>
@@ -244,9 +273,9 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={!isFormValid || isLoading}
-              className={`w-full py-4 rounded-xl font-semibold text-white transition-all duration-200 ${
+              className={`w-full py-1 rounded-xl font-semibold text-white transition-all duration-200 ${
                 isFormValid && !isLoading
-                  ? "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  ? "bg-[#2878aa] hover:bg-[#2878aa] shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                   : "bg-gray-400 cursor-not-allowed"
               }`}
             >
@@ -265,7 +294,7 @@ const LoginPage = () => {
           <div className="mt-6 text-center space-y-2">
             <a
               href="#"
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors"
+              className="text-[#2878aa] hover:text-[#2878aa] text-sm font-medium transition-colors"
             >
               Forgot Password ?
             </a>
