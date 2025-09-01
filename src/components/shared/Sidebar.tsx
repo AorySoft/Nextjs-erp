@@ -2,9 +2,11 @@
 
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBuilding, faUser, faChevronRight, faBuilding as faCompany } from '@fortawesome/free-solid-svg-icons';
+import { faBuilding, faUser, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import SearchInput from '../ui/SearchInput';
 import { NavigationItem } from '@/types';
+import Image from 'next/image';
+import benchmarkLogo from '../../app/login/Benckmark-logo.png';
 
 interface SidebarProps {
   className?: string;
@@ -32,13 +34,16 @@ export default function Sidebar({ className = "" }: SidebarProps) {
   return (
     <aside className={`flex flex-col bg-[#e2e6ea] w-[230px] min-w-[230px] border-r border-[#a0aec0] overflow-y-auto ${className}`}>
       {/* Logo Section */}
-      <div className="flex justify-center items-center h-[120px] border-b border-[#a0aec0]">
+      <div className="flex justify-center items-center h-[120px] border-b border-[#a0aec0] px-4">
         <div className="flex flex-col items-center">
-          <FontAwesomeIcon 
-            icon={faCompany} 
-            className="text-4xl text-[#0a74da] mb-2"
+          <Image
+            src={benchmarkLogo}
+            alt="Benchmark Logo"
+            width={120}
+            height={60}
+            className="object-contain"
+            priority
           />
-          <span className="text-lg font-bold text-[#0a74da]">NextERP</span>
         </div>
       </div>
 

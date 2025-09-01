@@ -3,6 +3,8 @@ import React, { useState, useEffect } from "react";
 import { ChevronDown, Search } from "lucide-react";
 import axios from "axios";
 import { toast } from 'react-toastify';
+import Image from "next/image";
+import backImg from "../login/Benckmark-logo.png";
 
 interface Branch {
   name: string;
@@ -78,94 +80,124 @@ const EntitySelectionPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-400 via-blue-500 to-blue-600 flex items-center justify-center p-4">
+    <div
+      className={`min-h-screen flex items-center justify-center p-4 transition-all duration-500 ease-in-out`}
+      style={{
+        backgroundImage: `url('https://bms.edap.com.pk/BlueGreyBG.149197dd2f3e8982.png')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundColor: "white",
+      }}
+    >
       {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-20 w-32 h-32 bg-white/10 rounded-full blur-xl"></div>
-        <div className="absolute bottom-20 right-20 w-48 h-48 bg-white/5 rounded-full blur-2xl"></div>
-        <div className="absolute top-1/2 left-10 w-24 h-24 bg-white/5 rounded-full blur-lg"></div>
-      </div>
 
       {/* Entity Selection Card */}
-      <div className="relative w-full max-w-md">
-        <div className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20">
+      <div className="relative w-full max-w-md shadow-[ -2vh_1vh_5vh_#00000012 ] backdrop-blur-[16px] rounded-[8vh] bg-[#ffffffb5]">
+        <div className="bg-transparent p-6 sm:p-8 ">
           {/* Logo and Header */}
           <div className="text-center mb-8">
-            <div className="w-24 h-24 mx-auto mb-6 bg-gray-800 rounded-full flex items-center justify-center">
-              <div className="text-white text-2xl">🌐</div>
+            <div className="w-20 h-20 mx-auto mb-4 bg-transparent flex items-center justify-center">
+              <div className="text-white text-xs font-bold" >
+                <Image
+                  src={backImg}
+                  alt="Benchmark Logo"
+                  width={147}
+                  height={147}
+                  style={{width: "100%", height: "100%"}} 
+                />
+              </div>
             </div>
-            <div className="text-blue-600 font-bold text-sm mb-2">THE BENCHMARK</div>
-            <p className="text-gray-500 text-xs">Coaching Education with Islamic System</p>
+            <h1 className="text-2xl font-bold text-[#2878aa] mb-2">SELECT ENTITY</h1>
+            <p className="text-gray-600 text-[11px] leading-relaxed">
+              Please select your entity to continue to the dashboard and access
+              all the system features
+            </p>
           </div>
 
-          {/* Entity Selection */}
-          <div className="mb-6">
-            <label className="block text-blue-600 font-semibold text-sm mb-3">
-              Select Entity*
-            </label>
-            
-            {isLoading ? (
-              <div className="w-full p-4 border-2 border-blue-200 rounded-xl bg-white/80 backdrop-blur-sm flex items-center justify-center">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-gray-600 text-sm">Loading entities...</span>
-                </div>
-              </div>
-            ) : error ? (
-              <div className="w-full p-4 border-2 border-red-200 rounded-xl bg-red-50 text-red-600 text-sm">
-                {error}
-                <button 
-                  onClick={fetchBranches}
-                  className="ml-2 underline hover:no-underline"
-                >
-                  Retry
-                </button>
-              </div>
-            ) : (
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm">
+              {error}
+              <button 
+                onClick={fetchBranches}
+                className="ml-2 underline hover:no-underline"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Entity Selection Form */}
+          <form className="space-y-4">
+            {/* Entity Selection Field */}
+            <div>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <select
-                  value={selectedEntity}
-                  onChange={(e) => setSelectedEntity(e.target.value)}
-                  className="w-full pl-12 pr-12 py-4 border-2 border-blue-200 rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm appearance-none cursor-pointer"
-                >
-                  <option value="">Select an entity...</option>
-                  {branches.map((branch) => (
-                    <option key={branch.name} value={branch.name}>
-                      {branch.name}
-                    </option>
-                  ))}
-                </select>
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5"
+                  color="#000000"
+                  strokeWidth={2}
+                />
+                {isLoading ? (
+                  <div className="w-full pl-12 pr-4 py-1 sm:py-1 border-2 border-[#2878aa] rounded-xl bg-white/80 backdrop-blur-sm flex items-center text-sm sm:text-base text-black">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-[#2878aa] border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-gray-600">Loading entities...</span>
+                    </div>
+                  </div>
+                ) : (
+                  <select
+                    value={selectedEntity}
+                    onChange={(e) => setSelectedEntity(e.target.value)}
+                    className="w-full pl-12 pr-12 py-1 sm:py-1 border-2 border-[#2878aa] rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-[#2878aa] focus:border-[#2878aa] text-sm sm:text-base text-black appearance-none cursor-pointer"
+                  >
+                    <option value="">Select Your Entity</option>
+                    {branches.map((branch) => (
+                      <option key={branch.name} value={branch.name}>
+                        {branch.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Proceed Button */}
-          <button
-            onClick={handleProceed}
-            disabled={!selectedEntity || isSubmitting || isLoading}
-            className={`w-full py-4 rounded-xl font-semibold text-white transition-all duration-200 ${
-              selectedEntity && !isSubmitting && !isLoading
-                ? "bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                : "bg-gray-400 cursor-not-allowed"
-            }`}
-          >
-            {isSubmitting ? (
-              <div className="flex items-center justify-center">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                Processing...
-              </div>
-            ) : (
-              "Proceed"
-            )}
-          </button>
+            {/* Proceed Button */}
+            <button
+              type="button"
+              onClick={handleProceed}
+              disabled={!selectedEntity || isSubmitting || isLoading}
+              className={`w-full py-1 rounded-xl font-semibold text-white transition-all duration-200 ${
+                selectedEntity && !isSubmitting && !isLoading
+                  ? "bg-[#2878aa] hover:bg-[#2878aa] shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
+            >
+              {isSubmitting ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                  Processing...
+                </div>
+              ) : (
+                "Proceed"
+              )}
+            </button>
+          </form>
 
-          {/* Info Text */}
-          <div className="mt-4 text-center">
-            <p className="text-gray-500 text-xs">
-              Please select your entity to continue to the dashboard
+          {/* Footer Links */}
+          <div className="mt-6 text-center space-y-2">
+            <p className="text-gray-600 text-sm">
+              Need help selecting an entity?
             </p>
+            <div className="flex justify-center space-x-4 text-xs text-gray-500">
+              <a href="#" className="hover:text-gray-700 transition-colors">
+                Terms & Conditions
+              </a>
+              <span>|</span>
+              <a href="#" className="hover:text-gray-700 transition-colors">
+                Privacy Policy
+              </a>
+            </div>
           </div>
         </div>
       </div>

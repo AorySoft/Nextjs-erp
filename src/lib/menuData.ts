@@ -32,13 +32,13 @@ export const timeAttendanceSection: MenuSection = {
     {
       title: 'Setup',
       items: [
-        { label: 'Holiday Type', isFavorite: false },
-        { label: 'Calendar Holidays', isFavorite: false },
+        { label: 'Holiday Type', isFavorite: false, href: '/human-resource/holiday-type' },
+    //    { label: 'Calendar Holidays', isFavorite: false },
         { label: 'Attendance Policies', isFavorite: false },
         { label: 'Shift', isFavorite: false },
-        { label: 'Device Registration', isFavorite: false },
-        { label: 'Attendance Policy Group', isFavorite: false },
-        { label: 'Custom Schedule', isFavorite: false }
+   //     { label: 'Device Registration', isFavorite: false },
+    //    { label: 'Attendance Policy Group', isFavorite: false },
+     //   { label: 'Custom Schedule', isFavorite: false }
       ]
     },
     {

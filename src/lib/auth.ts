@@ -75,8 +75,34 @@ export const clearSession = (): void => {
   // Clear cookies for middleware
   document.cookie = 'userSession=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   document.cookie = 'selectedEntity=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = 'session_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  document.cookie = 'user_data=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
   
   console.log('Session cleared');
+};
+
+// Logout function that calls the API
+export const logout = async (): Promise<void> => {
+  try {
+    const response = await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (response.ok) {
+      console.log('Logout successful');
+    } else {
+      console.warn('Logout API call failed, but clearing local session');
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+  } finally {
+    // Always clear local session regardless of API response
+    clearSession();
+    window.location.href = '/login';
+  }
 };
 
 // Redirect to login with message
