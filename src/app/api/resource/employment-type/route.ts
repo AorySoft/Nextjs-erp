@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const limit = searchParams.get('limit') || '100';
     
-    console.log('Server API: Fetching designations from ERP...');
+    console.log('Server API: Fetching Employment Type from ERP...');
     
     const authHeaders = getAuthHeaders();
     
@@ -41,11 +41,11 @@ export async function GET(request: NextRequest) {
       },
     });
     
-    console.log('Server API: Successfully fetched designations');
+    console.log('Server API: Successfully fetched Employment Type');
     
     return NextResponse.json(response.data);
   } catch (error) {
-    console.error('Server API: Error fetching designations:', error);
+    console.error('Server API: Error fetching Employment Type:', error);
     
     if (axios.isAxiosError(error)) {
       const status = error.response?.status || 500;
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       
       return NextResponse.json(
         { 
-          error: 'Failed to fetch designations', 
+          error: 'Failed to fetch Employment Type', 
           details: message,
           status: status 
         },

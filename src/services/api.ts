@@ -176,7 +176,7 @@ getEmploymentType: async () => {
     console.log('Frontend API: Full URL will be:', `${apiClient.defaults.baseURL}`);
     
     // Use the specific fields and limit as per your ERP API
-    const response = await apiClient.get('/resource/employment type?limit=100');
+    const response = await apiClient.get('/resource/employment-type?limit=100');
     console.log('Frontend API: Success response:', response.data);
     return response?.data;
   } catch (error) {
