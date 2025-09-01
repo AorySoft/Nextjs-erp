@@ -48,13 +48,13 @@ export interface EmployeeData {
 }
 
 export const employeeAPI = {
-  createEmployee: async (employeeData: EmployeeData) => {
+  createEmployee: async (employeeData: string) => {
     try {
       console.log('Frontend API: Creating employee with data:', employeeData);
       console.log('Frontend API: Base URL:', apiClient.defaults.baseURL);
       console.log('Frontend API: Full URL will be:', `${apiClient.defaults.baseURL}`);
       
-      const response = await apiClient.post('', employeeData);
+      const response = await apiClient.post(`${apiClient.defaults.baseURL}/resource/Employee${employeeData}`,{});
       console.log('Frontend API: Success response:', response.data);
       return response.data;
     } catch (error) {
@@ -89,13 +89,10 @@ export const employeeAPI = {
 
   getEmployees: async () => {
     try {
-      console.log('Frontend API: Fetching employees...');
-      console.log('Frontend API: Base URL:', apiClient.defaults.baseURL);
-      console.log('Frontend API: Full URL will be:', `${apiClient.defaults.baseURL}`);
+
       
       // Use the specific fields and limit as per your ERP API
       const response = await apiClient.get('/employees?fields=["name", "attendance_device_id","employee_name", "branch", "designation", "department", "cell_number", "custom_employment_category","employment_type"]&limit=false');
-      console.log('Frontend API: Success response:', response.data);
       return response.data;
     } catch (error) {
       console.error('Frontend API: Error fetching employees:', error);
@@ -117,13 +114,10 @@ export const employeeAPI = {
   // getting designation
   getDesignation: async () => {
     try {
-      console.log('Frontend API: Fetching designation...');
-      console.log('Frontend API: Base URL:', apiClient.defaults.baseURL);
-      console.log('Frontend API: Full URL will be:', `${apiClient.defaults.baseURL}`);
-      
+    
       // Use the specific fields and limit as per your ERP API
       const response = await apiClient.get('/resource/designation?limit=100');
-      console.log('Frontend API: Success response:', response.data);
+      console.log('Designation', response.data);
       return response?.data;
     } catch (error) {
       console.error('Frontend API: Error fetching designation:', error);
@@ -144,13 +138,10 @@ export const employeeAPI = {
   // getting department
   getDepartment: async () => {
     try {
-      console.log('Frontend API: Fetching department...');
-      console.log('Frontend API: Base URL:', apiClient.defaults.baseURL);
-      console.log('Frontend API: Full URL will be:', `${apiClient.defaults.baseURL}`);
       
       // Use the specific fields and limit as per your ERP API
       const response = await apiClient.get('/resource/department?limit=100');
-      console.log('Frontend API: Success response:', response.data);
+      console.log('Department', response.data);
       return response?.data;
     } catch (error) {
       console.error('Frontend API: Error fetching department:', error);
@@ -171,13 +162,9 @@ export const employeeAPI = {
   //
 getEmploymentType: async () => {
   try {
-    console.log('Frontend API: Fetching employment type...');
-    console.log('Frontend API: Base URL:', apiClient.defaults.baseURL);
-    console.log('Frontend API: Full URL will be:', `${apiClient.defaults.baseURL}`);
-    
     // Use the specific fields and limit as per your ERP API
     const response = await apiClient.get('/resource/employment-type?limit=100');
-    console.log('Frontend API: Success response:', response.data);
+    console.log('Employment Type', response.data);
     return response?.data;
   } catch (error) {
     console.error('Frontend API: Error fetching employment type:', error);

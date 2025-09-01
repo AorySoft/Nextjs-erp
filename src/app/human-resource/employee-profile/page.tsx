@@ -378,9 +378,7 @@ const EmployeeProfile = () => {
           grid_size: 4,
           isDisable: false,
           options: [
-            { value: "Manager", label: "Manager" },
-            { value: "Team Lead", label: "Team Lead" },
-            { value: "Developer", label: "Developer" },
+           {value:"manager",label:"manager"}
           ],
         },
 
@@ -394,9 +392,7 @@ const EmployeeProfile = () => {
           grid_size: 4,
           isDisable: false,
           options: [
-            { value: "Manager", label: "Manager" },
-            { value: "Team Lead", label: "Team Lead" },
-            { value: "Developer", label: "Developer" },
+            {value:"manager",label:"manager"}
           ],
         },
 
@@ -441,91 +437,9 @@ const EmployeeProfile = () => {
     setValue(newValue);
   };
 
-  // Fetch employees from API when component mounts
-  const fetchEmployessDesignation = async () => {
-    try {
-      
-      const response_designation = await employeeAPI.getDesignation();
-      console.log("Fetched designation from API:", response_designation);
-      const designations = response_designation?.data?.map((dep: any) => ({
-        value: dep.name, // or dep.code, adjust as needed
-        label: dep.name,
-      }));
-      console.log("Departments-->:", designations);
-      // Update only the `emp_department` field options
-      const updatedFields = [...state.employmentFormFields];
 
-      // Update only the field at index 5
-      updatedFields[6] = {
-        ...updatedFields[6],
-        options: designations,
-      };
-
-      // Update state
-      setState({
-        ...state,
-        employmentFormFields: updatedFields,
-      });
-    } catch (error) {
-      console.log("Error fetching designation:", error);
-    }
-  };
-
-  const fetchEmployessDepartment = async () => {
-    try {
-      const response_department = await employeeAPI.getDepartment();
-      // console.log("Fetched department from API:", response_department);
-      const departments = response_department?.data?.map((dep: any) => ({
-        value: dep.name, // or dep.code, adjust as needed
-        label: dep.name,
-      }));
-      console.log("Departments-->:", departments);
-      // Update only the `emp_department` field options
-      const updatedFields = [...state.employmentFormFields];
-
-      // Update only the field at index 5
-      updatedFields[5] = {
-        ...updatedFields[5],
-        options: departments,
-      };
-
-      // Update state
-      setState({
-        ...state,
-        employmentFormFields: updatedFields,
-      });
-    } catch (error) {
-      console.log("Error fetching department:", error);
-    }
-  };
-  const fetchEmployessEmploymentType = async () => {
-    try {
-      const response_employment_type = await employeeAPI.getEmploymentType();
-      // console.log("Fetched department from API:", response_department);
-      const employment_types = response_employment_type?.data?.map((dep: any) => ({
-        value: dep.name, // or dep.code, adjust as needed
-        label: dep.name,
-      }));
-      console.log("Employment Types-->:", employment_types);
-      // Update only the `emp_department` field options
-      const updatedFields = [...state.employmentFormFields];
-
-      // Update only the field at index 5
-      updatedFields[4] = {
-        ...updatedFields[4],
-        options: employment_types,
-      };
-
-      // Update state
-      setState({
-        ...state,
-        employmentFormFields: updatedFields,
-      });
-    } catch (error) {
-      console.log("Error fetching department:", error);
-    }
-  };
   //
+
   const fetchEmployees = async () => {
     try {
       setLoading(true);
@@ -554,12 +468,74 @@ const EmployeeProfile = () => {
       setLoading(false);
     }
   };
+  // Fetch employees from API when component mounts
+  const updateFormFieldOptions = (
+    fieldName: string,
+    options: { value: string; label: string }[]
+  ) => {
+    const updatedFields = [...state.employmentFormFields];
+    const index = updatedFields.findIndex(
+      (field) => field.input_name === fieldName
+    );
+    if (index !== -1) {
+      updatedFields[index] = {
+        ...updatedFields[index],
+        options,
+      };
+      setState({
+        ...state,               // 👈 destructuring state
+        employmentFormFields: updatedFields,
+      });
+    }
+  };
+  
+  const fetchEmploymentMeta = async () => {
+    try {
+      const [designationRes, departmentRes, employmentTypeRes] =
+        await Promise.all([
+          employeeAPI.getDesignation(),
+          employeeAPI.getDepartment(),
+          employeeAPI.getEmploymentType(),
+        ]);
+  
+      // Convert each to options
+      const designations =
+        designationRes?.data?.map((dep: any) => ({
+          value: dep.name,
+          label: dep.name,
+        })) || [];
+  
+      const departments =
+        departmentRes?.data?.map((dep: any) => ({
+          value: dep.name,
+          label: dep.name,
+        })) || [];
+  
+      const employmentTypes =
+        employmentTypeRes?.data?.map((dep: any) => ({
+          value: dep.name,
+          label: dep.name,
+        })) || [];
+  
+      // Update form fields
+      updateFormFieldOptions("emp_designation", designations);
+      updateFormFieldOptions("department", departments);
+      updateFormFieldOptions("employment_type", employmentTypes);
+  
+      console.log("✅ Updated employmentFormFields:", state.employmentFormFields);
+    } catch (error) {
+      console.log("❌ Error fetching employment meta:", error);
+    }
+  };
+  //
+ 
   useEffect(() => {
-    fetchEmployessEmploymentType();
-
     fetchEmployees();
-    fetchEmployessDesignation();
-    fetchEmployessDepartment();
+
+    // fetchEmployessEmploymentType();
+    // fetchEmployessDesignation();
+    // fetchEmployessDepartment();
+    fetchEmploymentMeta();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const columns = [
@@ -635,6 +611,14 @@ const EmployeeProfile = () => {
     }
     //  
     console.log("send_object",send_object);
+    const queryString = new URLSearchParams(send_object as any).toString();
+    const response = await employeeAPI.createEmployee(queryString);
+    if(response){
+      toast.success("Employee created successfully");
+      setState({ employee_dialog: false });
+      fetchEmployees();
+    }
+    console.log("Response from API:", response);
     
   } catch (error) {
     console.error('Error creating employee:', error);
