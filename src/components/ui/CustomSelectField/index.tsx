@@ -39,7 +39,7 @@ const LabeledSelect: React.FC<LabeledSelectProps> = ({
         }}
       >
         {label}
-        {required && <span style={{ color: "red" }}> *</span>}
+        {required ? <span style={{ color: "red" }}> *</span>:null}
       </label>
 
       {/* Wrapper for icon + select */}
@@ -64,7 +64,7 @@ const LabeledSelect: React.FC<LabeledSelectProps> = ({
           name={name}
           value={value}
           onChange={onChange}
-          required={required}
+          // required={required}
           style={{
             width: "100%",
             height: "26px",

@@ -498,36 +498,64 @@ const EmployeeProfile = () => {
       console.log("Error fetching department:", error);
     }
   };
-  //
-  useEffect(() => {
-    const fetchEmployees = async () => {
-      try {
-        setLoading(true);
-        const apiEmployees = await employeeAPI.getEmployees();
+  const fetchEmployessEmploymentType = async () => {
+    try {
+      const response_employment_type = await employeeAPI.getEmploymentType();
+      // console.log("Fetched department from API:", response_department);
+      const employment_types = response_employment_type?.data?.map((dep: any) => ({
+        value: dep.name, // or dep.code, adjust as needed
+        label: dep.name,
+      }));
+      console.log("Employment Types-->:", employment_types);
+      // Update only the `emp_department` field options
+      const updatedFields = [...state.employmentFormFields];
 
-        // Transform API response to match our TableEmployee interface
-        if (apiEmployees && Array.isArray(apiEmployees.data)) {
-          const transformedEmployees = apiEmployees.data.map(
-            (emp: APIEmployee) => ({
-              name: emp.name || "",
-              attendance_device_id: emp.attendance_device_id || "",
-              employee_name: emp.employee_name || "",
-              branch: emp.branch || "",
-              designation: emp.designation || "",
-              department: emp.department || "",
-              cell_number: emp.cell_number || "",
-              custom_employment_category: emp.custom_employment_category || "",
-              employment_type: emp.employment_type || "",
-            })
-          );
-          setEmployees(transformedEmployees);
-        }
-      } catch (error) {
-        console.error("Error fetching employees:", error);
-      } finally {
-        setLoading(false);
+      // Update only the field at index 5
+      updatedFields[4] = {
+        ...updatedFields[4],
+        options: employment_types,
+      };
+
+      // Update state
+      setState({
+        ...state,
+        employmentFormFields: updatedFields,
+      });
+    } catch (error) {
+      console.log("Error fetching department:", error);
+    }
+  };
+  //
+  const fetchEmployees = async () => {
+    try {
+      setLoading(true);
+      const apiEmployees = await employeeAPI.getEmployees();
+
+      // Transform API response to match our TableEmployee interface
+      if (apiEmployees && Array.isArray(apiEmployees.data)) {
+        const transformedEmployees = apiEmployees.data.map(
+          (emp: APIEmployee) => ({
+            name: emp.name || "",
+            attendance_device_id: emp.attendance_device_id || "",
+            employee_name: emp.employee_name || "",
+            branch: emp.branch || "",
+            designation: emp.designation || "",
+            department: emp.department || "",
+            cell_number: emp.cell_number || "",
+            custom_employment_category: emp.custom_employment_category || "",
+            employment_type: emp.employment_type || "",
+          })
+        );
+        setEmployees(transformedEmployees);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    fetchEmployessEmploymentType();
 
     fetchEmployees();
     fetchEmployessDesignation();
@@ -589,11 +617,24 @@ const EmployeeProfile = () => {
 
     const isValid = validateForm(state.employmentFormFields, state);
     console.log("handleCreateEmployee",isValid);
-
     if (!isValid) return;
-  
-    // ✅ proceed with API call
-    // console.log("Form is valid, submitting...", state);   
+
+    console.log("Form is valid, submitting...", state); 
+    //name gender date_of_birth custom_cnic custom_employment_category company department department date_of_joining attendance_device_id first_name
+    const send_object={
+      name: `${state.first_name} ${state.last_name}`,
+      gender: state.gender,
+      date_of_birth: state.date_of_birth,
+      custom_cnic: state.custom_cnic,
+      custom_employment_category: state.custom_employment_category,
+      company: state.company,
+      department: state.department,
+      date_of_joining: state.date_of_joining,
+      attendance_device_id: state.attendance_device_id,
+      first_name: state.first_name,
+    }
+    //  
+    console.log("send_object",send_object);
     
   } catch (error) {
     console.error('Error creating employee:', error);
@@ -745,6 +786,7 @@ const EmployeeProfile = () => {
                             }
                             placeholder="Pays"
                             options={field.options}
+                            required={field.required}
                           />
                         ) : (
                           <CustomTextField
