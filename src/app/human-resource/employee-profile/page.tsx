@@ -3,7 +3,7 @@ import React, { useState, useEffect, useReducer } from "react";
 import DashboardLayout from "@/components/shared/DashboardLayout";
 import DataTable from "@/components/ui/DataTable";
 import EmployeeProfileModal from "@/components/ui/EmployeeProfileModal";
-import { Edit, Trash, View, Plus, ChevronDown } from "lucide-react";
+import { Edit, Trash, View, Plus, ChevronDown, SquareUserRound } from "lucide-react";
 import { EmployeeData, employeeAPI } from "@/services/api";
 import MuiDialog from "@/components/ui/DialogBox";
 
@@ -540,9 +540,9 @@ const EmployeeProfile = () => {
       searchable: false,
       render: () => (
         <div className="flex gap-2">
-          <Trash size={20} />
-          <Edit size={20} />
-          <View size={20} />
+          <Trash size={16} color={defaultColor?.main_blue} />
+          <Edit size={16} color={defaultColor?.main_blue} />
+          <SquareUserRound size={16} color={defaultColor?.main_blue} />
         </div>
       ),
     },
