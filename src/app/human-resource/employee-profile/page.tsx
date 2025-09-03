@@ -440,7 +440,7 @@ const EmployeeProfile = () => {
     try {
       const [departmentsRes, designationsRes, employmentTypesRes]:any = await Promise.all([
         apiClient.get(`/resource/Department?limit=100`),
-        apiClient.get(`/resource/Department?limit=100`),
+        apiClient.get(`/resource/Designation?limit=100`),
         apiClient.get(`/resource/Employment Type?limit=100`),
       ]);
   
@@ -600,6 +600,11 @@ const EmployeeProfile = () => {
         date_of_joining: state.date_of_joining,
         attendance_device_id: state.machine_code,
         first_name: state.first_name,
+        designation: state.emp_designation,
+        employment_type: state.employment_type,
+        contact: state.contact,
+        employee_type: state.employee_type,
+        employee_id: "TBM"+state.machine_code,
       };
       //
       console.log("send_object", send_object);
