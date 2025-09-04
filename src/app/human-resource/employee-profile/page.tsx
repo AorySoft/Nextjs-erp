@@ -604,7 +604,7 @@ const EmployeeProfile = () => {
         employment_type: state.employment_type,
         contact: state.contact,
         employee_type: state.employee_type,
-        employee_id: "TBM"+state.machine_code,
+        employee_id: `TBM${state.machine_code}`,
       };
       //
       console.log("send_object", send_object);
