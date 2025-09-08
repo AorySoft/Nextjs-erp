@@ -110,7 +110,7 @@ const EmployeeProfileModal: React.FC<EmployeeProfileModalProps> = ({
           await employeeAPI.updateEmployee(employeeData.name, formData);
         } else {
           // Create new employee
-          await employeeAPI.createEmployee(formData);
+          // await employeeAPI.createEmployee(formData);
         }
         onSave?.(formData);
         onClose();
