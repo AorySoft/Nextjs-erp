@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import EditableField from "./EditableField";
 
 interface Column {
@@ -20,17 +20,27 @@ interface EditableDataTableProps {
   columns: Column[];
   data: RowData[];
   onDataChange?: (updatedData: RowData[]) => void;
+  onSelectionChange?: (selectedIds: (string | number)[]) => void; // ✅ To expose selected rows
 }
 
 const EditableDataTable: React.FC<EditableDataTableProps> = ({
   columns,
   data,
   onDataChange,
+  onSelectionChange,
 }) => {
   const [tableData, setTableData] = useState<RowData[]>(data);
-  const [selectedRows, setSelectedRows] = useState<Set<string | number>>(
-    new Set()
-  );
+  const [selectedRows, setSelectedRows] = useState<Set<string | number>>(new Set());
+
+  /** ✅ Sync tableData whenever parent data changes */
+  useEffect(() => {
+    setTableData(data);
+  }, [data]);
+
+  /** ✅ Notify parent whenever selection changes */
+  useEffect(() => {
+    onSelectionChange?.([...selectedRows]); // Send selected IDs to parent
+  }, [selectedRows, onSelectionChange]);
 
   /** -----------------------------
    *  UPDATE CELL VALUE
@@ -91,13 +101,11 @@ const EditableDataTable: React.FC<EditableDataTableProps> = ({
           {tableData.map((row) => (
             <tr key={row.id} className="hover:bg-gray-50">
               {/* Row Checkbox */}
-              <td className="border border-gray-300  text-center">
+              <td className="border border-gray-300 text-center">
                 <input
                   type="checkbox"
                   checked={selectedRows.has(row.id)}
                   onChange={() => toggleRowSelection(row.id)}
-                //   className="appearance-none h-5 w-5 border border-gray-300 rounded checked:bg-blue-500 checked:border-blue-500 cursor-pointer transition duration-200"
-
                 />
               </td>
 
@@ -105,7 +113,7 @@ const EditableDataTable: React.FC<EditableDataTableProps> = ({
               {columns.map((col) => (
                 <td
                   key={col.key}
-                  className={`border border-gray-300  text-sm ${!col.editable ? "p-1" : ""}`}
+                  className={`border border-gray-300 text-sm ${!col.editable ? "p-1" : ""}`}
                 >
                   {col.editable ? (
                     <EditableField
