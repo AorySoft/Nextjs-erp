@@ -1,11 +1,9 @@
 "use client";
-import React, { useState, useEffect, useReducer } from "react";
+import React, { useState, useEffect, useReducer, useCallback } from "react";
 import DashboardLayout from "@/components/shared/DashboardLayout";
 import DataTable from "@/components/ui/DataTable";
-import { Edit, Trash, View, Plus, ChevronDown, SquareUserRound } from "lucide-react";
-import { EmployeeData, employeeAPI } from "@/services/api";
+import { Edit, Trash, ChevronDown, SquareUserRound } from "lucide-react";
 import MuiDialog from "@/components/ui/DialogBox";
-
 import {
   Accordion,
   AccordionDetails,
@@ -19,12 +17,12 @@ import {
 import CustomTextField from "@/components/ui/CustomTextField";
 import { defaultColor } from "@/utils/constant";
 import CustomSelectField from "@/components/ui/CustomSelectField";
-import CustomDateInputField from "@/components/ui/DatePicker";
 import { toast } from "react-toastify";
-import axios from "axios";
 import apiClient from "@/services/apiClient";
 import EditableDataTable from "@/components/ui/EditableDataTable";
-
+import Button from "@/components/ui/Button";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faTrash } from "@fortawesome/free-solid-svg-icons/faTrash";
 interface TableEmployee {
   name: string;
   attendance_device_id: string;
@@ -84,15 +82,50 @@ const AttendancePolicy = () => {
   const [loading, setLoading] = useState(false);
   const [value, setValue] = React.useState(0);
 
+  // const [state, setState] = useReducer(
+  //   (state: any, newState: any) => ({ ...state, ...newState }),
+  //   {
+
+  //     employee_dialog: false,
+  //     AbsentPolicy: [
+  //       {
+  //         id: 1,
+  //         start_time: 0,
+  //         end_time: 60,
+  //         period_type: "Daily",
+  //         type: "Count",
+  //         value: 1,
+  //       },
+  //       {
+  //         id: 2,
+  //         start_time: 0,
+  //         end_time: 60,
+  //         period_type: "Daily",
+  //         type: "Count",
+  //         value: 1,
+  //       },
+  //     ],
+  //   }
+  // );
   const [state, setState] = useReducer(
     (state: any, newState: any) => ({ ...state, ...newState }),
     {
-      //basic information
-      //
       employee_dialog: false,
-      
+      AbsentPolicy: [
+        {
+          id: 1,
+          period_type: "00:00",
+          // end_time: "00:60",
+          policy_count:0,
+          absent_count:0
+          // period_type: "Daily",
+          // type: "Count",
+          // value: 1,
+        },
+      ],
     }
   );
+
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
   };
@@ -100,74 +133,43 @@ const AttendancePolicy = () => {
   //
   const fetchFormOptions = async () => {
     try {
-      const [departmentsRes, designationsRes, employmentTypesRes]:any = await Promise.all([
-        apiClient.get(`/resource/Department?limit=100`),
-        apiClient.get(`/resource/Designation?limit=100`),
-        apiClient.get(`/resource/Employment Type?limit=100`),
+      const [AttendancePoliciesRes]: any = await Promise.all([
+        apiClient.get(`/resource/Attendance Policies`),
+        // apiClient.get(`/resource/Designation?limit=100`),
+        // apiClient.get(`/resource/Employment Type?limit=100`),
       ]);
-  
-      const departments_options:any = departmentsRes?.data?.map((item: any) => ({
-        value: item.name,
-        label: item.name,
-      })) ?? [];
-      setState({departments_options});
-      // {
-      //   input_name: "department",
-      //   input_label: "Department",
-      //   placeholder: "Enter department",
-      //   type: "select",
-      //   required: true,
-      //   startIcon: <></>,
-      //   grid_size: 4,
-      //   isDisable: false,
-      //   options: [{ value: "manager", label: "manager" }],
-      // },
 
-      // {
-      //   input_name: "emp_designation",
-      //   input_label: "Designation",
-      //   placeholder: "Enter designation",
-      //   type: "select",
-      //   required: true,
-      //   startIcon: <></>,
-      //   grid_size: 4,
-      //   isDisable: false,
-      //   options: [{ value: "manager", label: "manager" }],
-      // },
+      const AttendancePoliciesOptions: any =
+        AttendancePoliciesRes?.data?.map((item: any) => ({
+          value: item.name,
+          label: item.name,
+        })) ?? [];
+      setState({ AttendancePoliciesOptions });
 
+      // const designations:any = designationsRes?.data?.map((item: any) => ({
+      //   value: item.name,
+      //   label: item.name,
+      // })) ?? [];
+      // setState({designations_options:designations});
 
+      // const employmentTypes:any = employmentTypesRes?.data?.map((item: any) => ({
+      //   value: item.name,
+      //   label: item.name,
+      // })) ?? [];
+      // setState({employment_types_options:employmentTypes});
 
-  
-      const designations:any = designationsRes?.data?.map((item: any) => ({
-        value: item.name,
-        label: item.name,
-      })) ?? [];
-      setState({designations_options:designations});
-  
-      const employmentTypes:any = employmentTypesRes?.data?.map((item: any) => ({
-        value: item.name,
-        label: item.name,
-      })) ?? [];
-      setState({employment_types_options:employmentTypes});
-  
       // ✅ single update, no overwrite
-   
-  
     } catch (err) {
       console.error("❌ Error fetching form options:", err);
     }
   };
-  
-  
+
   useEffect(() => {
     const fetchAll = async () => {
       try {
-        const res: any = await apiClient.get(
-          '/resource/Attendance Policies'
-        );
-        console.log(res,"resp");
-  
-  
+        const res: any = await apiClient.get("/resource/Attendance Policies");
+        console.log(res, "resp");
+
         if (res && Array.isArray(res.data)) {
           const transformedEmployees = res.data.map((emp: APIEmployee) => ({
             name: emp.name || "",
@@ -182,19 +184,18 @@ const AttendancePolicy = () => {
           }));
           setEmployees(transformedEmployees);
         }
-  
+
         // parallel or sequential fetch
-      fetchFormOptions();
+        fetchFormOptions();
       } catch (err: any) {
         console.error("API error ❌", err.response?.data || err.message);
       }
     };
-  
+
     fetchAll();
     fetchFormOptions();
   }, []);
 
-  
   const columns = [
     {
       key: "action",
@@ -212,38 +213,89 @@ const AttendancePolicy = () => {
     { key: "code", label: "Code", searchable: false },
     { key: "policy_name", label: "Policy Name", searchable: false },
     { key: "policy_type", label: "Policy Type", searchable: false },
-
-   
   ];
-  // function for cehcking mandotary fields
+// absentPolcy
+  const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
 
-  // create employee function
+  const deleteRows = () => {
+    try {
+      const updatedData = state.AbsentPolicy.filter(
+        (row: any) => !selectedIds.includes(row.id)
+      );
+      setState({ AbsentPolicy: updatedData });
+      setSelectedIds([]); // clear selection
+    } catch (err) {
+      console.error("Error deleting rows:", err);
+    }
+  };
+  const addRow = useCallback(() => {
+    const currentList = state.AbsentPolicy ?? [];
 
-  // eidtable datable work
-  const columns_edit:any = [
-    { key: "name", label: "Name", editable: true, type: "input" },
-    {
-      key: "status",
-      label: "Status",
-      editable: true,
-      type: "select",
-      options: ["Active", "Inactive", "Pending"],
-    },
-    { key: "role", label: "Role", editable: false }, // Non-editable field
-  ];
-  const initialData = [
-    { id: 1, name: "Alice", status: "Active", role: "Admin" },
-    { id: 2, name: "Bob", status: "Inactive", role: "User" },
-    { id: 3, name: "Charlie", status: "Pending", role: "Manager" },
-  ];
+    // Find max id for uniqueness
+    const maxId = currentList.length
+      ? Math.max(...currentList.map((item: any) => item.id))
+      : 0;
+
+    const newRow = {
+      id: maxId + 1,
+          period_type: "00:00",
+          // end_time: "00:60",
+          policy_count:0,
+          absent_count:0
+    };
+
+    // ✅ Use concat (faster than spread for large arrays)
+    setState({
+      AbsentPolicy: currentList.concat(newRow),
+    });
+  }, [state.AbsentPolicy, setState]);
 
   const handleDataChange = (updatedData: any[]) => {
     console.log("Updated Table Data:", updatedData);
   };
+
   //
+  // Policy
+  const [selectedIdsPolicy, setSelectedIdsPolicy] = useState<(string | number)[]>([]);
 
+  const deleteRowsPolicy = () => {
+    try {
+      const updatedData = state.Policy.filter(
+        (row: any) => !selectedIds.includes(row.id)
+      );
+      setState({ Policy: updatedData });
+      setSelectedIds([]); // clear selection
+    } catch (err) {
+      console.error("Error deleting rows:", err);
+    }
+  };
+  const addRowPolicy = useCallback(() => {
+    const currentList = state.Policy ?? [];
 
- 
+    // Find max id for uniqueness
+    const maxId = currentList.length
+      ? Math.max(...currentList.map((item: any) => item.id))
+      : 0;
+
+    const newRow = {
+      id: maxId + 1,
+      start_time: "00:00",
+      end_time: "00:60",
+      period_type: "Daily",
+      type: "Count",
+      value: 1,
+    };
+
+    // ✅ Use concat (faster than spread for large arrays)
+    setState({
+      Policy: currentList.concat(newRow),
+    });
+  }, [state?.Policy, setState]);
+
+  const handleDataChangePolicy = (updatedData: any[]) => {
+    console.log("Updated Table Data:", updatedData);
+  };
+
   return (
     <DashboardLayout>
       <div className="p-4 h-[calc(100vh-120px)] overflow-y-auto">
@@ -258,16 +310,17 @@ const AttendancePolicy = () => {
             >
               Refresh
             </button>
-            <button
+            <Button
+              icon={faPlus}
+              variant="secondary"
               onClick={() => {
                 // setIsModalOpen(true);
                 setState({ employee_dialog: true });
+                // addRow();
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <Plus size={20} />
-              New 
-            </button>
+              New
+            </Button>
           </div>
         </div>
         {loading ? (
@@ -277,8 +330,6 @@ const AttendancePolicy = () => {
         ) : (
           <DataTable columns={columns} data={employees} />
         )}
-
-      
       </div>
       <MuiDialog
         open={state?.employee_dialog}
@@ -293,122 +344,308 @@ const AttendancePolicy = () => {
         // onSave={() => handleCreateEmployee()}
       >
         <div id="employee_profile-parent">
-         
-          <Box sx={{ width: "100%" }}>
+          <Accordion defaultExpanded>
+            <AccordionSummary
+              sx={{ margin: 0, backgroundColor: defaultColor.main_grey }}
+              expandIcon={<ChevronDown />}
+              aria-controls="basic-info-content"
+              id="basic-info-header"
+            >
+              <Typography
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  fontFamily: "sans-serif",
+                  margin: 0,
+                }}
+              >
+                Basic Information
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails
+              sx={{ margin: 0, backgroundColor: defaultColor.main_grey }}
+            >
+              <Grid container spacing={2}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6,
+                  }}
+                  container
+                  spacing={2}
+                  key="employee_data"
+                >
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <CustomTextField
+                      input_label="Code"
+                      input_name="policy_name"
+                      input_value={state.policy_name}
+                      onchange={(
+                        e: React.ChangeEvent<
+                          HTMLInputElement | HTMLTextAreaElement
+                        >
+                      ) => setState({ policy_name: e.target.value })}
+                      required
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <CustomSelectField
+                      name="policy_type"
+                      label="Policy Type"
+                      value={state.policy_type}
+                      onChange={(e) =>
+                        setState({
+                          ...state,
+                          policy_type: e.target.value,
+                        })
+                      }
+                      placeholder="Pays"
+                      options={state?.AttendancePoliciesOptions ?? []}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 12 }}>
+                    <CustomTextField
+                      input_label="Policy Name"
+                      input_name="policy_name"
+                      input_value={state.policy_name}
+                      onchange={(
+                        e: React.ChangeEvent<
+                          HTMLInputElement | HTMLTextAreaElement
+                        >
+                      ) => setState({ policy_name: e.target.value })}
+                      required
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <CustomSelectField
+                      name="calculation_basis"
+                      label="calculation basis"
+                      value={state.calculation_basis}
+                      onChange={(e) =>
+                        setState({
+                          ...state,
+                          calculation_basis: e.target.value,
+                        })
+                      }
+                      placeholder="calculation basis"
+                      options={[
+                        { value: "Duration base", label: "Duration base" },
+                        { value: "Actual min", label: "Actual min" },
+                      ]}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <CustomTextField
+                      input_label="No. of excuses"
+                      input_name="no_of_excuse"
+                      input_value={state.no_of_excuse}
+                      onchange={(
+                        e: React.ChangeEvent<
+                          HTMLInputElement | HTMLTextAreaElement
+                        >
+                      ) => setState({ no_of_excuse: e.target.value })}
+                      input_type="number"
+                      required
+                    />
+                  </Grid>
+                </Grid>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6,
+                  }}
+                  id="employee_data_img"
+                ></Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+          <Button
+            icon={faPlus}
+            variant="secondary"
+            onClick={() => {
+              console.log(state, "s->>>>");
+            }}
+          >
+            state
+          </Button>
+          <Box
+            sx={{
+              width: "100%",
+              display: state?.policy_type ? "block" : "none",
+            }}
+          >
             {/* Tabs header */}
             <Tabs
               value={value}
               onChange={handleChange}
               aria-label="basic tabs example"
             >
-              <Tab label="Personal Information" />
-              <Tab label="Employment " />
+              <Tab label="Policy " />
+              <Tab label="AbsentPolicy " />
             </Tabs>
 
             {/* Tab panels */}
             <TabPanel value={value} index={0}>
               <Grid container spacing={2}>
-                <Grid
-                  size={{
-                    xs: 12,
-                    md: 12,
-                  }}
-                  container
-                  spacing={2}
-                  key="employee_data"
-                >
-                  {state?.personalFormFields?.map(
-                    (field: any, index: number) => {
-                      return (
-                        <Grid
-                          key={field.input_name || `personal-${index}`}
-                          size={{
-                            xs: 12,
-                            md: field.grid_size,
-                          }}
-                        >
-                          {field?.type === "date" ? (
-                            <CustomDateInputField
-                              input_label={field.input_label}
-                              input_name={field.input_name}
-                              input_value={state[field.input_name]}
-                              onchange={(
-                                e: React.ChangeEvent<
-                                  HTMLInputElement | HTMLTextAreaElement
-                                >
-                              ) =>
-                                setState({
-                                  ...state,
-                                  [field.input_name]: e.target.value,
-                                })
-                              }
-                              required
-                            />
-                          ) : field?.type === "select" ? (
-                            <CustomSelectField
-                              name="country"
-                              label={field.input_label}
-                              value={state[field.input_name]}
-                              onChange={(e) =>
-                                setState({
-                                  ...state,
-                                  [field.input_name]: e.target.value,
-                                })
-                              }
-                              placeholder="Pays"
-                              options={field.options}
-                            />
-                          ) : (
-                            <CustomTextField
-                              input_value={state[field.input_name]}
-                              onchange={(
-                                e: React.ChangeEvent<
-                                  HTMLInputElement | HTMLTextAreaElement
-                                >
-                              ) =>
-                                setState({
-                                  ...state,
-                                  [field.input_name]: e.target.value,
-                                })
-                              }
-                              required
-                              input_name={field.input_name}
-                              error={!state[field.input_name]}
-                              startIcon={field.startIcon}
-                              placeholder={field.placeholder}
-                              input_label={field.input_label}
-                              isDisable={field.isDisable}
-                            />
-                          )}
-                        </Grid>
-                      );
+                <Grid size={{ xs: 12, md: 12 }} display={"flex"} gap={"10px"}>
+                  {" "}
+                  <Button
+                    icon={faPlus}
+                    variant="secondary"
+                    onClick={() => {
+                      // setIsModalOpen(true);
+                      addRowPolicy();
+                    }}
+                  >
+                    New
+                  </Button>
+                  <Button
+                    icon={faTrash}
+                    variant="secondary"
+                    onClick={() => {
+                      // setIsModalOpen(true);
+                      deleteRowsPolicy();
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </Grid>
+                <Grid size={{ xs: 12, md: 12 }}>
+                  {" "}
+                  <EditableDataTable
+                    columns={[
+                      {
+                        key: "start_time",
+                        label: "Start Time",
+                        editable: true,
+                        type: "input",
+                      },
+                      {
+                        key: "end_time",
+                        label: "End Time",
+                        editable: true,
+                        type: "input",
+                      },
+                      {
+                        key: "period_type",
+                        label: "Period Type",
+                        editable: true,
+                        type: "select",
+                        options: ["Daily", "Monthly", "None"],
+                      },
+                      {
+                        key: "type",
+                        label: "Type",
+                        editable: true,
+                        type: "select",
+                        options: [
+                          "None",
+                          "Count",
+                          "Excuse",
+                          "Absent",
+                          "Half Day",
+                        ],
+                      },
+                      {
+                        key: "value",
+                        label: "Value",
+                        editable: true,
+                        type: "input",
+                      },
+                      // "start_time": 0,//int
+                      // "end_time": 60,//int
+                      // "period_type": "Daily",//Select Daily or Monthly
+                      // "type": "Count",//Select Count, Excuse, Absent
+                      // "value": 1 //int
+                    ]}
+                    data={state?.Policy ?? []}
+                    // onDataChange={handleDataChange}
+                    onDataChange={(updatedData) =>
+                      setState({ Policy: updatedData })
                     }
-                  )}
+                    onSelectionChange={(ids) => setSelectedIdsPolicy(ids)} // ✅ Capture selected rows
+                  />
                 </Grid>
               </Grid>
             </TabPanel>
             <TabPanel value={value} index={1}>
               <Grid container spacing={2}>
-              <EditableDataTable
-        columns={[
-          { key: "name", label: "Name", editable: true, type: "input" },
-          {
-            key: "status",
-            label: "Status",
-            editable: true,
-            type: "select",
-            options: ["Active", "Inactive", "Pending"],
-          },
-          { key: "role", label: "Role", editable: false }, // Non-editable field
-        ]}
-        data={initialData}
-        onDataChange={handleDataChange}
-      />
+                <Grid size={{ xs: 12, md: 12 }}>
+                  {" "}
+                  <Button icon={faPlus} variant="secondary" onClick={addRow}>
+                    New
+                  </Button>
+                  <Button
+                    icon={faTrash}
+                    variant="secondary"
+                    onClick={() => {
+                      // setIsModalOpen(true);
+                      deleteRows();
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </Grid>
+                <Grid>
+                  {" "}
+                  <EditableDataTable
+                    columns={[
+                      {
+                        key: "period_type",
+                        label: "Periodtype",
+                        editable: true,
+                        type: "select",
+                        options: ["Daily", "Monthly", "None"],
+                      },
+                      {
+                        key: "policy_count",
+                        label: "Policy count",
+                        editable: true,
+                        type: "input",
+                      },
+                      {
+                        key: "absent_count",
+                        label: "Absent count",
+                        editable: true,
+                        type: "input",
+                      },
+                     
+                      // "start_time": 0,//int
+                      // "end_time": 60,//int
+                      // "period_type": "Daily",//Select Daily or Monthly
+                      // "type": "Count",//Select Count, Excuse, Absent
+                      // "value": 1 //int
+                    ]}
+                    data={
+                      state?.AbsentPolicy ?? [
+                        {
+                          id: 1,
+                          start_time: 0,
+                          end_time: 60,
+                          period_type: "Daily",
+                          type: "Count",
+                          value: 1,
+                        },
+                        {
+                          id: 2,
+                          start_time: 0,
+                          end_time: 60,
+                          period_type: "Daily",
+                          type: "Count",
+                          value: 1,
+                        },
+                      ]
+                    }
+                    onDataChange={(updatedData) =>
+                      setState({ AbsentPolicy: updatedData })
+                    }
+                    onSelectionChange={(ids) => setSelectedIds(ids)} // ✅ Capture selected rows
+                    // onDataChange={handleDataChange}
+                  />
+                </Grid>
               </Grid>
             </TabPanel>
           </Box>
-
-         
         </div>
       </MuiDialog>
     </DashboardLayout>

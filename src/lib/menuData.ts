@@ -35,7 +35,7 @@ export const timeAttendanceSection: MenuSection = {
         { label: 'Holiday Type', isFavorite: false, href: '/human-resource/time-attendance/setup/holiday-type' },
        { label: 'Calendar Holidays', isFavorite: false, href: '/human-resource/time-attendance/setup/calendar-holidays'  },
         { label: 'Attendance Policies', isFavorite: false , href: '/human-resource/time-attendance/setup/attendance-policy'},
-        { label: 'Shift', isFavorite: false },
+        { label: 'Shift', isFavorite: false, href: '/human-resource/time-attendance/setup/employee-shifts' },
    //     { label: 'Device Registration', isFavorite: false },
     //    { label: 'Attendance Policy Group', isFavorite: false },
      //   { label: 'Custom Schedule', isFavorite: false }

@@ -152,7 +152,7 @@ const HolidayTypePage = () => {
     })
   }
 
-  const columns = [
+  const columns:any = [
     {
       key: "action",
       label: "Action",
