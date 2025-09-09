@@ -33,7 +33,7 @@ export const timeAttendanceSection: MenuSection = {
       title: 'Setup',
       items: [
         { label: 'Holiday Type', isFavorite: false, href: '/human-resource/time-attendance/setup/holiday-type' },
-    //    { label: 'Calendar Holidays', isFavorite: false },
+       { label: 'Calendar Holidays', isFavorite: false, href: '/human-resource/time-attendance/setup/calendar-holidays'  },
         { label: 'Attendance Policies', isFavorite: false , href: '/human-resource/time-attendance/setup/attendance-policy'},
         { label: 'Shift', isFavorite: false },
    //     { label: 'Device Registration', isFavorite: false },

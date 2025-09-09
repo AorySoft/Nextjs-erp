@@ -4,7 +4,7 @@ import type React from "react"
 
 import DashboardLayout from "@/components/shared/DashboardLayout"
 import DataTable from "@/components/ui/DataTable"
-import { Edit, Trash, Plus, ChevronDown } from "lucide-react"
+import { Edit, Trash, Plus, ChevronDown, SquareUserRound } from "lucide-react"
 import { defaultColor } from "@/utils/constant"
 import { toast } from "react-toastify"
 // import apiClient from "@/services/apiClient"
@@ -159,13 +159,9 @@ const HolidayTypePage = () => {
       searchable: false,
       render: (row: HolidayType) => (
         <div className="flex gap-2">
-          <Edit size={16} color={defaultColor?.main_blue} className="cursor-pointer" onClick={() => handleEdit(row)} />
-          <Trash
-            size={16}
-            color={defaultColor?.main_blue}
-            className="cursor-pointer"
-            onClick={() => handleDelete(row)}
-          />
+          <Trash size={16} color={defaultColor?.main_blue} />
+          <Edit size={16} color={defaultColor?.main_blue} />
+          <SquareUserRound size={16} color={defaultColor?.main_blue} />
         </div>
       ),
     },
@@ -284,7 +280,7 @@ const HolidayTypePage = () => {
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
-              New Holiday Type
+              New
             </button>
           </div>
         </div>
@@ -296,6 +292,9 @@ const HolidayTypePage = () => {
         ) : (
           <DataTable columns={columns} data={holidayTypes} />
         )}
+{/* 
+        <HolidayTypeModal
+        /> */}
 
         <MuiDialog
           open={state?.holiday_dialog}
