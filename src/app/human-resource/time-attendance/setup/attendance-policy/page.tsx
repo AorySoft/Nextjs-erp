@@ -116,8 +116,8 @@ const AttendancePolicy = () => {
           id: 1,
           period_type: "00:00",
           // end_time: "00:60",
-          policy_count:0,
-          absent_count:0
+          policy_count: 0,
+          absent_count: 0,
           // period_type: "Daily",
           // type: "Count",
           // value: 1,
@@ -164,34 +164,33 @@ const AttendancePolicy = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const res: any = await apiClient.get("/resource/Attendance Policies");
-        console.log(res, "resp");
+  const fetchAll = async () => {
+    try {
+      const res: any = await apiClient.get("/resource/Attendance Policies");
+      console.log(res, "resp");
 
-        if (res && Array.isArray(res.data)) {
-          const transformedEmployees = res.data.map((emp: APIEmployee) => ({
-            name: emp.name || "",
-            attendance_device_id: emp.attendance_device_id || "",
-            employee_name: emp.employee_name || "",
-            branch: emp.branch || "",
-            designation: emp.designation || "",
-            department: emp.department || "",
-            cell_number: emp.cell_number || "",
-            custom_employment_category: emp.custom_employment_category || "",
-            employment_type: emp.employment_type || "",
-          }));
-          setEmployees(transformedEmployees);
-        }
-
-        // parallel or sequential fetch
-        fetchFormOptions();
-      } catch (err: any) {
-        console.error("API error ❌", err.response?.data || err.message);
+      if (res && Array.isArray(res.data)) {
+        const transformedEmployees = res.data.map((emp: APIEmployee) => ({
+          name: emp.name || "",
+          attendance_device_id: emp.attendance_device_id || "",
+          employee_name: emp.employee_name || "",
+          branch: emp.branch || "",
+          designation: emp.designation || "",
+          department: emp.department || "",
+          cell_number: emp.cell_number || "",
+          custom_employment_category: emp.custom_employment_category || "",
+          employment_type: emp.employment_type || "",
+        }));
+        setEmployees(transformedEmployees);
       }
-    };
 
+      // parallel or sequential fetch
+      fetchFormOptions();
+    } catch (err: any) {
+      console.error("API error ❌", err.response?.data || err.message);
+    }
+  };
+  useEffect(() => {
     fetchAll();
     fetchFormOptions();
   }, []);
@@ -214,7 +213,7 @@ const AttendancePolicy = () => {
     { key: "policy_name", label: "Policy Name", searchable: false },
     { key: "policy_type", label: "Policy Type", searchable: false },
   ];
-// absentPolcy
+  // absentPolcy
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
 
   const deleteRows = () => {
@@ -238,10 +237,10 @@ const AttendancePolicy = () => {
 
     const newRow = {
       id: maxId + 1,
-          period_type: "00:00",
-          // end_time: "00:60",
-          policy_count:0,
-          absent_count:0
+      period_type: "00:00",
+      // end_time: "00:60",
+      policy_count: 0,
+      absent_count: 0,
     };
 
     // ✅ Use concat (faster than spread for large arrays)
@@ -256,7 +255,25 @@ const AttendancePolicy = () => {
 
   //
   // Policy
-  const [selectedIdsPolicy, setSelectedIdsPolicy] = useState<(string | number)[]>([]);
+  const [selectedIdsPolicy, setSelectedIdsPolicy] = useState<
+    (string | number)[]
+  >([]);
+  const handlePolicyChange = useCallback((updatedData: any[]) => {
+    setState((prev:any) => {
+      if (JSON.stringify(prev.Policy) === JSON.stringify(updatedData)) {
+        return prev; // Skip update if data didn't change
+      }
+      return { ...prev, Policy: updatedData };
+    });
+  }, []);
+
+  /** ✅ Memoized function to handle selected rows */
+  const handleSelectionChange = useCallback((selectedIds: (string | number)[]) => {
+    setState((prev:any) => ({
+      ...prev,
+      selectedPolicyIds: selectedIds,
+    }));
+  }, []);
 
   const deleteRowsPolicy = () => {
     try {
@@ -295,9 +312,42 @@ const AttendancePolicy = () => {
   const handleDataChangePolicy = (updatedData: any[]) => {
     console.log("Updated Table Data:", updatedData);
   };
-
+  const createPolicy = async () => {
+    // console.log(state, "s->>>>");
+    try {
+      const send_object = {
+        policy_name: state?.policy_name,
+        policy_type: state?.policy_type,
+        no_of_excuse: Number(state?.no_of_excuse), //int
+        policy: state?.Policy?.map((item: any) => {
+          return {
+            start_time: Number(item.start_time), //int
+            end_time: Number(item.end_time), //int
+            period_type: item.period_type, //Select Daily or Monthly
+            type: item.type, //Select Count, Excuse, Absent
+            value: Number(item.value), //int
+          };
+        }),
+        absent_policy: state?.AbsentPolicy?.map((item: any) => {
+          return {
+            period_type: item.period_type, //Select Daily or Monthly
+            policy_count: Number(item.policy_count), //int
+            absent_count: item.absent_count,
+          };
+        }),
+      };
+      const resp = await apiClient.post("/resource/Attendance Policies", send_object);  
+      console.log(resp, "resp");
+      toast.success("Policy created successfully");
+      window.location.reload();
+    } catch (error) {
+      console.error("Error creating policy:", error);
+      toast.error("Failed to create policy");
+    }
+  };
   return (
     <DashboardLayout>
+    <>
       <div className="p-4 h-[calc(100vh-120px)] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-semibold text-gray-800">
@@ -341,7 +391,7 @@ const AttendancePolicy = () => {
         // description="This action cannot be undone. Are/ ou sure?"
         description={false}
         maxWidth="lg"
-        // onSave={() => handleCreateEmployee()}
+        onSave={() => createPolicy()}
       >
         <div id="employee_profile-parent">
           <Accordion defaultExpanded>
@@ -378,13 +428,13 @@ const AttendancePolicy = () => {
                   <Grid size={{ xs: 12, md: 6 }}>
                     <CustomTextField
                       input_label="Code"
-                      input_name="policy_name"
-                      input_value={state.policy_name}
+                      input_name="policy_id"
+                      input_value={state.policy_id}
                       onchange={(
                         e: React.ChangeEvent<
                           HTMLInputElement | HTMLTextAreaElement
                         >
-                      ) => setState({ policy_name: e.target.value })}
+                      ) => setState({ policy_id: e.target.value })}
                       required
                     />
                   </Grid>
@@ -400,7 +450,7 @@ const AttendancePolicy = () => {
                         })
                       }
                       placeholder="Pays"
-                      options={state?.AttendancePoliciesOptions ?? []}
+                      options={state?.AttendancePoliciesOptions_ ?? [{value:"Late Arrival", label:"Late Arrival"}, {value:"Early Departure", label:"Early Departure"}]}
                     />
                   </Grid>
                   <Grid size={{ xs: 12, md: 12 }}>
@@ -552,18 +602,14 @@ const AttendancePolicy = () => {
                         editable: true,
                         type: "input",
                       },
-                      // "start_time": 0,//int
-                      // "end_time": 60,//int
-                      // "period_type": "Daily",//Select Daily or Monthly
-                      // "type": "Count",//Select Count, Excuse, Absent
-                      // "value": 1 //int
                     ]}
                     data={state?.Policy ?? []}
                     // onDataChange={handleDataChange}
+                    // onDataChange={handlePolicyChange}
                     onDataChange={(updatedData) =>
                       setState({ Policy: updatedData })
                     }
-                    onSelectionChange={(ids) => setSelectedIdsPolicy(ids)} // ✅ Capture selected rows
+                    onSelectionChange={handleSelectionChange}
                   />
                 </Grid>
               </Grid>
@@ -609,7 +655,7 @@ const AttendancePolicy = () => {
                         editable: true,
                         type: "input",
                       },
-                     
+
                       // "start_time": 0,//int
                       // "end_time": 60,//int
                       // "period_type": "Daily",//Select Daily or Monthly
@@ -648,7 +694,8 @@ const AttendancePolicy = () => {
           </Box>
         </div>
       </MuiDialog>
-    </DashboardLayout>
+    </>
+     </DashboardLayout>
   );
 };
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import EditableField from "./EditableField";
 
 interface Column {
@@ -20,7 +20,7 @@ interface EditableDataTableProps {
   columns: Column[];
   data: RowData[];
   onDataChange?: (updatedData: RowData[]) => void;
-  onSelectionChange?: (selectedIds: (string | number)[]) => void; // ✅ To expose selected rows
+  onSelectionChange?: (selectedIds: (string | number)[]) => void;
 }
 
 const EditableDataTable: React.FC<EditableDataTableProps> = ({
@@ -32,14 +32,25 @@ const EditableDataTable: React.FC<EditableDataTableProps> = ({
   const [tableData, setTableData] = useState<RowData[]>(data);
   const [selectedRows, setSelectedRows] = useState<Set<string | number>>(new Set());
 
+  const prevSelectedRef = useRef<(string | number)[]>([]);
+
   /** ✅ Sync tableData whenever parent data changes */
   useEffect(() => {
-    setTableData(data);
-  }, [data]);
+    // Only update if the incoming data is actually different
+    if (JSON.stringify(data) !== JSON.stringify(tableData)) {
+      setTableData(data);
+    }
+  }, [data, tableData]);
 
   /** ✅ Notify parent whenever selection changes */
   useEffect(() => {
-    onSelectionChange?.([...selectedRows]); // Send selected IDs to parent
+    const selectedArray = [...selectedRows];
+
+    // Only call parent callback when selection truly changes
+    if (JSON.stringify(prevSelectedRef.current) !== JSON.stringify(selectedArray)) {
+      prevSelectedRef.current = selectedArray;
+      onSelectionChange?.(selectedArray);
+    }
   }, [selectedRows, onSelectionChange]);
 
   /** -----------------------------
@@ -49,8 +60,12 @@ const EditableDataTable: React.FC<EditableDataTableProps> = ({
     const updated = tableData.map((row) =>
       row.id === rowId ? { ...row, [key]: value } : row
     );
-    setTableData(updated);
-    onDataChange?.(updated);
+
+    // ✅ Only call parent if data actually changed
+    if (JSON.stringify(updated) !== JSON.stringify(tableData)) {
+      setTableData(updated);
+      onDataChange?.(updated);
+    }
   };
 
   /** -----------------------------
@@ -79,6 +94,7 @@ const EditableDataTable: React.FC<EditableDataTableProps> = ({
       <table className="border border-gray-300 w-full table-auto">
         <thead>
           <tr className="bg-gray-100">
+            {/* Select All Checkbox */}
             <th className="border border-gray-300 px-3 py-2 text-center">
               <input
                 type="checkbox"
