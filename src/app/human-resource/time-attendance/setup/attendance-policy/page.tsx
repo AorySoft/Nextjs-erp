@@ -346,7 +346,6 @@ const AttendancePolicy = () => {
     }
   };
   return (
-    <DashboardLayout>
     <>
       <div className="p-4 h-[calc(100vh-120px)] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
@@ -695,7 +694,6 @@ const AttendancePolicy = () => {
         </div>
       </MuiDialog>
     </>
-     </DashboardLayout>
   );
 };
 
