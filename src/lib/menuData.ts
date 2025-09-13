@@ -44,9 +44,9 @@ export const timeAttendanceSection: MenuSection = {
     {
       title: 'Leave',
       items: [
-        { label: 'Leave Type', isFavorite: false },
-        { label: 'Leave Group', isFavorite: false },
-        { label: 'Leave Adjustment Policy', isFavorite: false },
+        { label: 'Leave Type', isFavorite: false, href: '/human-resource/time-attendance/leave/leave-type' },
+        { label: 'Leave Group', isFavorite: false, href: '/human-resource/time-attendance/leave/leave-group' },
+        { label: 'Leave Adjustment Policy', isFavorite: false, href: '/human-resource/time-attendance/leave/leave-adjustment-policy' },
         { label: 'Leave Quota Allocation', isFavorite: false },
         { label: 'Leave Request', isFavorite: false },
         { label: 'Leave Approval', isFavorite: false },
@@ -56,11 +56,11 @@ export const timeAttendanceSection: MenuSection = {
     {
       title: 'Attendance',
       items: [
-        { label: 'Employee Attendance', isFavorite: false },
-        { label: 'Bulk Attendance', isFavorite: false },
-        { label: 'Download Attendance', isFavorite: false },
+        { label: 'Employee Attendance', isFavorite: false, href: '/human-resource/time-attendance/attendance/employee-attendance' },
+        { label: 'Bulk Attendance', isFavorite: false, },
+        { label: 'Download Attendance', isFavorite: false,},
         { label: 'Upload Attendance', isFavorite: false },
-        { label: 'Attendance Request', isFavorite: false }
+        { label: 'Attendance Request', isFavorite: false, href: '/human-resource/time-attendance/attendance/attendance-request' }
       ]
     },
     {
