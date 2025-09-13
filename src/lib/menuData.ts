@@ -50,7 +50,7 @@ export const timeAttendanceSection: MenuSection = {
         { label: 'Leave Quota Allocation', isFavorite: false },
         { label: 'Leave Request', isFavorite: false },
         { label: 'Leave Approval', isFavorite: false },
-        { label: 'Leave Adjustment', isFavorite: false }
+        { label: 'Leave Adjustment', isFavorite: false, href: '/human-resource/time-attendance/leave/leave-adjustment' }
       ]
     },
     {
