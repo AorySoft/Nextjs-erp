@@ -56,11 +56,11 @@ export const timeAttendanceSection: MenuSection = {
     {
       title: 'Attendance',
       items: [
-        { label: 'Employee Attendance', isFavorite: false },
-        { label: 'Bulk Attendance', isFavorite: false },
-        { label: 'Download Attendance', isFavorite: false },
+        { label: 'Employee Attendance', isFavorite: false, href: '/human-resource/time-attendance/attendance/employee-attendance' },
+        { label: 'Bulk Attendance', isFavorite: false, },
+        { label: 'Download Attendance', isFavorite: false,},
         { label: 'Upload Attendance', isFavorite: false },
-        { label: 'Attendance Request', isFavorite: false }
+        { label: 'Attendance Request', isFavorite: false, href: '/human-resource/time-attendance/attendance/attendance-request' }
       ]
     },
     {

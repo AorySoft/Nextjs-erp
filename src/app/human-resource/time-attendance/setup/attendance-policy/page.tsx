@@ -693,6 +693,8 @@ const AttendancePolicy = () => {
           </Box>
         </div>
       </MuiDialog>
+
+      {/* <MuiDialog></MuiDialog> */}
     </>
   );
 };
