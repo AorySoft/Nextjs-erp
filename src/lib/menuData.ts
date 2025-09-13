@@ -44,9 +44,9 @@ export const timeAttendanceSection: MenuSection = {
     {
       title: 'Leave',
       items: [
-        { label: 'Leave Type', isFavorite: false },
-        { label: 'Leave Group', isFavorite: false },
-        { label: 'Leave Adjustment Policy', isFavorite: false },
+        { label: 'Leave Type', isFavorite: false, href: '/human-resource/time-attendance/leave/leave-type' },
+        { label: 'Leave Group', isFavorite: false, href: '/human-resource/time-attendance/leave/leave-group' },
+        { label: 'Leave Adjustment Policy', isFavorite: false, href: '/human-resource/time-attendance/leave/leave-adjustment-policy' },
         { label: 'Leave Quota Allocation', isFavorite: false },
         { label: 'Leave Request', isFavorite: false },
         { label: 'Leave Approval', isFavorite: false },

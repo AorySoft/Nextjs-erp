@@ -200,7 +200,6 @@ const CalendarHolidayPage = () => {
         apply_on: state.apply_on,
         created_date: selectedHoliday ? selectedHoliday.created_date : new Date().toISOString().split("T")[0],
       }
-F
       if (selectedHoliday) {
         setCalendarHolidays((prev) =>
           prev.map((item) => (item.name === selectedHoliday.name ? { ...send_object } : item)),
