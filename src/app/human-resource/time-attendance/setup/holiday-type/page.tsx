@@ -264,7 +264,7 @@ const HolidayTypePage = () => {
   }
 
   return (
-    <DashboardLayout>
+    
       <div className="p-4 h-[calc(100vh-120px)] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-semibold text-gray-800">Holiday Type</h1>
@@ -455,7 +455,6 @@ const HolidayTypePage = () => {
           </div>
         </MuiDialog>
       </div>
-    </DashboardLayout>
   )
 }
 
