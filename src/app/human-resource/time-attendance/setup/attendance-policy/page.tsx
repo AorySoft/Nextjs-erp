@@ -81,6 +81,12 @@ const AttendancePolicy = () => {
   const [employees, setEmployees] = useState<TableEmployee[]>([]);
   const [loading, setLoading] = useState(false);
   const [value, setValue] = React.useState(0);
+  interface Policy {
+    name: string;
+    policy_type: string;
+    id?: string | number;
+  }
+  const [policies, setPolicies] = useState<Policy[]>([]);
 
   // const [state, setState] = useReducer(
   //   (state: any, newState: any) => ({ ...state, ...newState }),
@@ -193,14 +199,48 @@ const AttendancePolicy = () => {
   useEffect(() => {
     fetchAll();
     fetchFormOptions();
+    fetchAttendancePolicies();
   }, []);
+
+  const fetchAttendancePolicies = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching attendance policies...');
+      const response = await apiClient.get<any>(
+        '/resource/Attendance Policies?fields=["name","policy_type"]'
+      );
+      console.log('API Response:', response);
+      
+      // Handle case where data might be in response.data or response
+      const responseData = response.data || response;
+      
+      if (Array.isArray(responseData)) {
+        // Add unique IDs to each policy for the table
+        const policiesWithIds = responseData.map((policy: any, index: number) => ({
+          name: policy.name || `Policy ${index + 1}`,
+          policy_type: policy.policy_type || 'Standard',
+          id: policy.name || `policy-${index}`
+        }));
+        
+        console.log('Processed policies:', policiesWithIds);
+        setPolicies(policiesWithIds);
+      } else {
+        console.warn('Expected array but got:', responseData);
+      }
+    } catch (error) {
+      console.error('Error fetching attendance policies:', error);
+      toast.error('Failed to load attendance policies');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const columns = [
     {
       key: "action",
       label: "Action",
       searchable: false,
-      render: () => (
+      render: (row: unknown, index: number) => (
         <div className="flex gap-2">
           <Trash size={16} color={defaultColor?.main_blue} />
           <Edit size={16} color={defaultColor?.main_blue} />
@@ -208,10 +248,30 @@ const AttendancePolicy = () => {
         </div>
       ),
     },
-    { key: "sno", label: "S.no", searchable: false },
-    { key: "code", label: "Code", searchable: false },
-    { key: "policy_name", label: "Policy Name", searchable: false },
-    { key: "policy_type", label: "Policy Type", searchable: false },
+    { 
+      key: "sno", 
+      label: "S.no", 
+      searchable: false,
+      render: (row: unknown, index: number) => index + 1
+    },
+    { 
+      key: "name", 
+      label: "Policy Name", 
+      searchable: true,
+      render: (row: unknown, index: number) => {
+        const policy = row as Policy;
+        return policy.name;
+      }
+    },
+    { 
+      key: "policy_type", 
+      label: "Policy Type",
+      searchable: true,
+      render: (row: unknown, index: number) => {
+        const policy = row as Policy;
+        return policy.policy_type;
+      }
+    },
   ];
   // absentPolcy
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
@@ -377,7 +437,7 @@ const AttendancePolicy = () => {
             <div className="text-gray-600">Loading...</div>
           </div>
         ) : (
-          <DataTable columns={columns} data={employees} />
+          <DataTable columns={columns} data={policies} />
         )}
       </div>
       <MuiDialog
