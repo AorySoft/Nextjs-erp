@@ -255,7 +255,18 @@ const LeaveAdjustment = () => {
   }, [])
 
   const columns = [
-  
+    {
+      key: "action",
+      label: "Action",
+      searchable: false,
+      render: (row: unknown, index: number) => (
+        <div className="flex gap-2">
+          <Trash size={16} color={defaultColor?.main_blue} />
+          <Edit size={16} color={defaultColor?.main_blue} />
+          <SquareUserRound size={16} color={defaultColor?.main_blue} />
+        </div>
+      ),
+    },
     {
       key: "sno",
       label: "S.No",

@@ -1,6 +1,6 @@
 "use client";
 
-import { defaultColor } from "@/utils/constant";
+//import { defaultColor } from "@/utils/constant";
 import React, { useState, useMemo } from "react";
 
 interface Column {
