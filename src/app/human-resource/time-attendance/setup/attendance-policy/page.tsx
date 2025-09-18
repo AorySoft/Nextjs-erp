@@ -166,20 +166,15 @@ const AttendancePolicy = () => {
 
   const fetchAll = async () => {
     try {
-      const res: any = await apiClient.get("/resource/Attendance Policies");
+      const res: any = await apiClient.get("/resource/Attendance Policies?fields=[\"name\",\"policy_type\"]");
       console.log(res, "resp");
 
       if (res && Array.isArray(res.data)) {
-        const transformedEmployees = res.data.map((emp: APIEmployee) => ({
-          name: emp.name || "",
-          attendance_device_id: emp.attendance_device_id || "",
-          employee_name: emp.employee_name || "",
-          branch: emp.branch || "",
-          designation: emp.designation || "",
-          department: emp.department || "",
-          cell_number: emp.cell_number || "",
-          custom_employment_category: emp.custom_employment_category || "",
-          employment_type: emp.employment_type || "",
+        const transformedEmployees = res.data.map((emp: any) => ({
+         name_:emp.name,
+         code:emp.code,
+         name:emp.name,
+         policy_type:emp.policy_type,
         }));
         setEmployees(transformedEmployees);
       }
@@ -200,21 +195,35 @@ const AttendancePolicy = () => {
       key: "action",
       label: "Action",
       searchable: false,
-      render: () => (
+      render: (row: any, index: number) => (
         <div className="flex gap-2">
-          <Trash size={16} color={defaultColor?.main_blue} />
-          <Edit size={16} color={defaultColor?.main_blue} />
-          <SquareUserRound size={16} color={defaultColor?.main_blue} />
+          <Trash
+            size={16}
+            color={defaultColor?.main_blue}
+            onClick={() => DeleteRowData(row, index)} // <-- Pass row data here
+          />
+          <Edit
+            size={16}
+            color={defaultColor?.main_blue}
+            onClick={() => console.log("Edit clicked:", row)}
+          />
+          <SquareUserRound
+            size={16}
+            color={defaultColor?.main_blue}
+            onClick={() => console.log("View clicked:", row)}
+          />
         </div>
       ),
     },
     { key: "sno", label: "S.no", searchable: false },
     { key: "code", label: "Code", searchable: false },
-    { key: "policy_name", label: "Policy Name", searchable: false },
+    { key: "name", label: "Policy Name", searchable: false },
     { key: "policy_type", label: "Policy Type", searchable: false },
   ];
   // absentPolcy
   const [selectedIds, setSelectedIds] = useState<(string | number)[]>([]);
+//
+
 
   const deleteRows = () => {
     try {
@@ -345,6 +354,22 @@ const AttendancePolicy = () => {
       toast.error("Failed to create policy");
     }
   };
+
+  // delete row data 
+  const DeleteRowData = async(row:any,index:number) => {
+    try {
+      console.log(row?.name, "state?.selectedPolicyIds");
+      // console.log(state?.selectedPolicyIds, "state?.selectedPolicyIds");
+      return;
+      const resp = await apiClient.delete(`resource/Attendance Policies/${state?.selectedPolicyIds}`); 
+      console.log(resp, "resp");
+      toast.success("Policy deleted successfully");
+      window.location.reload();
+    } catch (error) {
+      console.error("Error deleting policy:", error);
+      toast.error("Failed to delete policy");
+    }
+  }
   return (
     <>
       <div className="p-4 h-[calc(100vh-120px)] overflow-y-auto">
@@ -377,7 +402,7 @@ const AttendancePolicy = () => {
             <div className="text-gray-600">Loading...</div>
           </div>
         ) : (
-          <DataTable columns={columns} data={employees} />
+          <DataTable columns={columns} data={employees}  />
         )}
       </div>
       <MuiDialog
