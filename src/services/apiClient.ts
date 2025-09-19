@@ -43,6 +43,10 @@ const request = {
     const res = await apiClient.delete<T>(url, config);
     return res.data;
   },
+  deleteBody: async <T>(url: string,body?: any, config?: AxiosRequestConfig) => {
+    const res = await apiClient.delete<T>(url, config);
+    return res.data;
+  },
   update: async <T>(url: string, data?: any, config?: AxiosRequestConfig) => {
     const res = await apiClient.put<T>(url, data, config);
     return res.data;

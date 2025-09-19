@@ -1,12 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useReducer } from 'react';
 import DataTable from '@/components/ui/DataTable';
 import Breadcrumb from '@/components/shared/Breadcrumb';
 import TopBar from '@/components/ui/TopBar';
 import ShiftModal from '@/components/ui/ShiftModal';
 import { employeeAPI, EmployeeData } from '@/services/api';
-import { Menu } from 'lucide-react';
+import { Edit, Menu, SquareUserRound, Trash } from 'lucide-react';
+import { defaultColor } from '@/utils/constant';
+import MuiDialog from '@/components/ui/DialogBox';
+import apiClient from "@/services/apiClient";
+import { toast } from 'react-toastify';
+import AddShift from './Addshift';
 
 
 interface EmployeeShiftData extends EmployeeData {
@@ -28,7 +33,24 @@ const EmployeeShiftsPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState("All");
   const [sourceTypeFilter, setSourceTypeFilter] = useState("All");
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
-
+  const [state, setState] = useReducer(
+    (state: any, newState: any) => ({ ...state, ...newState }),
+    {
+      shift_dialog: false,
+      AbsentPolicy: [
+        {
+          id: 1,
+          period_type: "00:00",
+          // end_time: "00:60",
+          policy_count: 0,
+          absent_count: 0,
+          // period_type: "Daily",
+          // type: "Count",
+          // value: 1,
+        },
+      ],
+    }
+  );
   // Fetch employee data on component mount
   useEffect(() => {
     const fetchEmployees = async () => {
@@ -82,6 +104,31 @@ const EmployeeShiftsPage: React.FC = () => {
 
   // Define columns for the DataTable
   const columns = [
+    {
+      key: "action",
+      label: "Action",
+      searchable: false,
+      render: (row: unknown, index: number) => (
+        <div className="flex gap-2">
+          <Trash
+            size={16}
+            color={defaultColor?.main_blue}
+            style={{cursor:"pointer"}}
+            onClick={() => setState({ selected_data: row, delete_dialog: true })} // <-- Pass row data here
+          />
+          <Edit
+            size={16}
+            color={defaultColor?.main_blue}
+            // onClick={() => getPolicybyId(row)}
+          />
+          <SquareUserRound
+            size={16}
+            color={defaultColor?.main_blue}
+            onClick={() => console.log("View clicked:", row)}
+          />
+        </div>
+      ),
+    },
     {
       key: 'sno',
       label: 'S.No',
@@ -165,6 +212,7 @@ const EmployeeShiftsPage: React.FC = () => {
   // TopBar handlers
   const handleNewClick = () => {
     setIsShiftModalOpen(true);
+    setState({ shift_dialog: true });
   };
 
   const handleCloseModal = () => {
@@ -277,6 +325,26 @@ const EmployeeShiftsPage: React.FC = () => {
     );
   }
 
+    // delete row data 
+    const DeleteRowData = async(row:any,index?:number) => {
+      try {
+        console.log(row, "state?.selectedPolicyIds");
+        window.alert(`data:${row}`)
+        // console.log(state?.selectedPolicyIds, "state?.selectedPolicyIds");
+        return;
+        // window.alert("are you sure you want to delete")
+        const resp = await apiClient.deleteBody(`/method/hrms.api.roster.delete_shift_schedule_assignment`,{
+          shift_schedule_assignment: "HR-SHSA-25-09-00007"
+      }); 
+        console.log(resp, "resp");
+        toast.success("Policy deleted successfully");
+        window.location.reload();
+      } catch (error) {
+        console.error("Error deleting policy:", error);
+        toast.error("Failed to delete policy");
+      }
+    }
+  
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top Bar */}
@@ -418,6 +486,64 @@ const EmployeeShiftsPage: React.FC = () => {
         onSave={handleSaveShift}
         onSaveAndClose={handleSaveAndCloseShift}
       />
+       <MuiDialog
+              open={state?.shift_dialog}
+              onClose={() => {
+                setState({ shift_dialog: false });
+              }}
+              multiple_btn={true}
+              title="Employee Profile"
+              // description="This action cannot be undone. Are/ ou sure?"
+              description={false}
+              maxWidth="lg"
+              // onSave={() => createPolicy()}
+            >
+           <AddShift
+              isOpen={isShiftModalOpen}
+              onClose={handleCloseModal}
+              onSave={handleSaveShift}
+              onSaveAndClose={handleSaveAndCloseShift}
+            />
+            </MuiDialog>
+              <MuiDialog open={state?.delete_dialog} 
+                       multiple_btn={false}
+                       title="Delete Confirmation"
+                       // description="This action cannot be undone. Are/ ou sure?"
+                       description={false}
+                       maxWidth="sm"
+                  onClose={() => setState({ delete_dialog: false })}>
+              <div className="p-4 ">
+                {/* Title */}
+                <h2 className="text-lg font-semibold text-gray-800 mb-2">
+                  Delete Confirmation
+                </h2>
+            
+                {/* Message */}
+                <p className="text-sm text-gray-600 mb-4">
+                  Are you sure you want to delete this item? This action cannot be undone.
+                </p>
+            
+                {/* Actions */}
+                <div className="flex justify-end gap-3">
+                  <button
+                    className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
+                    onClick={() => setState({ delete_dialog: false })}
+                  >
+                    Cancel
+                  </button>
+            
+                  <button
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                    onClick={() => {
+                      DeleteRowData(state?.selected_data,); // Call your delete function
+                      setState({ delete_dialog: false });
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </MuiDialog>
     </div>
   );
 };
