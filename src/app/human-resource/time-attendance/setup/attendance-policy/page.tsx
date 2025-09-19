@@ -240,12 +240,13 @@ const AttendancePolicy = () => {
           <Trash
             size={16}
             color={defaultColor?.main_blue}
-            onClick={() => DeleteRowData(row, index)} // <-- Pass row data here
+            style={{cursor:"pointer"}}
+            onClick={() => setState({ selected_data: row, delete_dialog: true })} // <-- Pass row data here
           />
           <Edit
             size={16}
             color={defaultColor?.main_blue}
-            onClick={() => console.log("Edit clicked:", row)}
+            onClick={() => getPolicybyId(row)}
           />
           <SquareUserRound
             size={16}
@@ -413,21 +414,80 @@ const AttendancePolicy = () => {
       console.error("Error creating policy:", error);
       toast.error("Failed to create policy");
     }
-  };
-
-  // delete row data 
-  const DeleteRowData = async(row:any,index:number) => {
+  };  const updatePolicy = async () => {
+    // console.log(state, "s->>>>");
     try {
-      console.log(row?.name, "state?.selectedPolicyIds");
+      const send_object = {
+        policy_name: state?.policy_name,
+        policy_type: state?.policy_type,
+        no_of_excuse: Number(state?.no_of_excuse), //int
+        policy: state?.Policy?.map((item: any) => {
+          return {
+            start_time: Number(item.start_time), //int
+            end_time: Number(item.end_time), //int
+            period_type: item.period_type, //Select Daily or Monthly
+            type: item.type, //Select Count, Excuse, Absent
+            value: Number(item.value), //int
+          };
+        }),
+        absent_policy: state?.AbsentPolicy?.map((item: any) => {
+          return {
+            period_type: item.period_type, //Select Daily or Monthly
+            policy_count: Number(item.policy_count), //int
+            absent_count: item.absent_count,
+          };
+        }),
+      };
+      const resp = await apiClient.update(`/resource/Attendance Policies/${state?.updated_name}`, send_object);  
+      console.log(resp, "resp");
+      toast.success("Policy updated successfully");
+      window.location.reload();
+    } catch (error) {
+      console.error("Error updating policy:", error);
+      toast.error("Failed to update policy");
+    }
+  };
+  
+  // delete row data 
+  const DeleteRowData = async(row:any,index?:number) => {
+    try {
+      console.log(row, "state?.selectedPolicyIds");
       // console.log(state?.selectedPolicyIds, "state?.selectedPolicyIds");
-      return;
-      const resp = await apiClient.delete(`resource/Attendance Policies/${state?.selectedPolicyIds}`); 
+      // return;
+      // window.alert("are you sure you want to delete")
+      const resp = await apiClient.delete(`resource/Attendance Policies/${row.id}`); 
       console.log(resp, "resp");
       toast.success("Policy deleted successfully");
       window.location.reload();
     } catch (error) {
       console.error("Error deleting policy:", error);
       toast.error("Failed to delete policy");
+    }
+  }
+
+  // get policy by id
+  const getPolicybyId  =async(row:any)=>{
+    try {
+      const resp:any = await apiClient.get(`resource/Attendance Policies/${row.id}`); 
+      console.log(resp, "resp");
+      // toast.success("Policy fetched successfully");
+      if(resp.data){
+        setState({ view_dialog: true ,
+          Policy: resp?.data?.policy,
+          AbsentPolicy: resp?.data?.absent_policy,
+          policy_name: resp?.data?.policy_name,
+          policy_type: resp?.data?.policy_type,
+          no_of_excuse: resp?.data?.no_of_excuse,
+          updated_name: resp?.data?.name,
+        });
+      }else{
+        toast.error("Something went wrong , try again after some time");
+      }
+
+      // window.location.reload();
+    } catch (error) {
+      console.error("Error fetching policy:", error);
+      toast.error("Failed to fetch policy");
     }
   }
   return (
@@ -778,8 +838,366 @@ const AttendancePolicy = () => {
           </Box>
         </div>
       </MuiDialog>
+      <MuiDialog open={state?.delete_dialog} 
+           multiple_btn={false}
+           title="Delete Confirmation"
+           // description="This action cannot be undone. Are/ ou sure?"
+           description={false}
+           maxWidth="sm"
+      onClose={() => setState({ delete_dialog: false })}>
+  <div className="p-4 ">
+    {/* Title */}
+    <h2 className="text-lg font-semibold text-gray-800 mb-2">
+      Delete Confirmation
+    </h2>
 
-      {/* <MuiDialog></MuiDialog> */}
+    {/* Message */}
+    <p className="text-sm text-gray-600 mb-4">
+      Are you sure you want to delete this item? This action cannot be undone.
+    </p>
+
+    {/* Actions */}
+    <div className="flex justify-end gap-3">
+      <button
+        className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
+        onClick={() => setState({ delete_dialog: false })}
+      >
+        Cancel
+      </button>
+
+      <button
+        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+        onClick={() => {
+          DeleteRowData(state?.selected_data,); // Call your delete function
+          setState({ delete_dialog: false });
+        }}
+      >
+        Delete
+      </button>
+    </div>
+  </div>
+</MuiDialog>
+
+<MuiDialog
+        open={state?.view_dialog}
+        onClose={() => {
+          setState({ view_dialog: false
+
+            ,AbsentPolicy: [],
+            Policy: [],
+            policy_name: "",
+            policy_type: "",
+            no_of_excuse: "",
+           });
+        }}
+        multiple_btn={true}
+        title="Attendance Policy"
+        // description="This action cannot be undone. Are/ ou sure?"
+        description={false}
+        maxWidth="lg"
+        onSave={() => updatePolicy()}
+      >
+        <div id="employee_profile-parent">
+          <Accordion defaultExpanded>
+            <AccordionSummary
+              sx={{ margin: 0, backgroundColor: defaultColor.main_grey }}
+              expandIcon={<ChevronDown />}
+              aria-controls="basic-info-content"
+              id="basic-info-header"
+            >
+              <Typography
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  fontFamily: "sans-serif",
+                  margin: 0,
+                }}
+              >
+                Basic Information
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails
+              sx={{ margin: 0, backgroundColor: defaultColor.main_grey }}
+            >
+              <Grid container spacing={2}>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6,
+                  }}
+                  container
+                  spacing={2}
+                  key="employee_data"
+                >
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <CustomTextField
+                      input_label="Code"
+                      input_name="policy_id"
+                      input_value={state.policy_id}
+                      onchange={(
+                        e: React.ChangeEvent<
+                          HTMLInputElement | HTMLTextAreaElement
+                        >
+                      ) => setState({ policy_id: e.target.value })}
+                      required
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <CustomSelectField
+                      name="policy_type"
+                      label="Policy Type"
+                      value={state.policy_type}
+                      onChange={(e) =>
+                        setState({
+                          ...state,
+                          policy_type: e.target.value,
+                        })
+                      }
+                      placeholder="Pays"
+                      options={state?.AttendancePoliciesOptions_ ?? [{value:"Late Arrival", label:"Late Arrival"}, {value:"Early Departure", label:"Early Departure"}]}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 12 }}>
+                    <CustomTextField
+                      input_label="Policy Name"
+                      input_name="policy_name"
+                      input_value={state.policy_name}
+                      onchange={(
+                        e: React.ChangeEvent<
+                          HTMLInputElement | HTMLTextAreaElement
+                        >
+                      ) => setState({ policy_name: e.target.value })}
+                      required
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <CustomSelectField
+                      name="calculation_basis"
+                      label="calculation basis"
+                      value={state.calculation_basis}
+                      onChange={(e) =>
+                        setState({
+                          ...state,
+                          calculation_basis: e.target.value,
+                        })
+                      }
+                      placeholder="calculation basis"
+                      options={[
+                        { value: "Duration base", label: "Duration base" },
+                        { value: "Actual min", label: "Actual min" },
+                      ]}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <CustomTextField
+                      input_label="No. of excuses"
+                      input_name="no_of_excuse"
+                      input_value={state.no_of_excuse}
+                      onchange={(
+                        e: React.ChangeEvent<
+                          HTMLInputElement | HTMLTextAreaElement
+                        >
+                      ) => setState({ no_of_excuse: e.target.value })}
+                      input_type="number"
+                      required
+                    />
+                  </Grid>
+                </Grid>
+                <Grid
+                  size={{
+                    xs: 12,
+                    md: 6,
+                  }}
+                  id="employee_data_img"
+                ></Grid>
+              </Grid>
+            </AccordionDetails>
+          </Accordion>
+          <Button
+            icon={faPlus}
+            variant="secondary"
+            onClick={() => {
+              console.log(state, "s->>>>");
+            }}
+          >
+            state
+          </Button>
+          <Box
+            sx={{
+              width: "100%",
+              display: state?.policy_type ? "block" : "none",
+            }}
+          >
+            {/* Tabs header */}
+            <Tabs
+              value={value}
+              onChange={handleChange}
+              aria-label="basic tabs example"
+            >
+              <Tab label="Policy " />
+              <Tab label="AbsentPolicy " />
+            </Tabs>
+
+            {/* Tab panels */}
+            <TabPanel value={value} index={0}>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 12 }} display={"flex"} gap={"10px"}>
+                  {" "}
+                  <Button
+                    icon={faPlus}
+                    variant="secondary"
+                    onClick={() => {
+                      // setIsModalOpen(true);
+                      addRowPolicy();
+                    }}
+                  >
+                    New
+                  </Button>
+                  <Button
+                    icon={faTrash}
+                    variant="secondary"
+                    onClick={() => {
+                      // setIsModalOpen(true);
+                      deleteRowsPolicy();
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </Grid>
+                <Grid size={{ xs: 12, md: 12 }}>
+                  {" "}
+                  <EditableDataTable
+                    columns={[
+                      {
+                        key: "start_time",
+                        label: "Start Time",
+                        editable: true,
+                        type: "input",
+                      },
+                      {
+                        key: "end_time",
+                        label: "End Time",
+                        editable: true,
+                        type: "input",
+                      },
+                      {
+                        key: "period_type",
+                        label: "Period Type",
+                        editable: true,
+                        type: "select",
+                        options: ["Daily", "Monthly", "None"],
+                      },
+                      {
+                        key: "type",
+                        label: "Type",
+                        editable: true,
+                        type: "select",
+                        options: [
+                          "None",
+                          "Count",
+                          "Excuse",
+                          "Absent",
+                          "Half Day",
+                        ],
+                      },
+                      {
+                        key: "value",
+                        label: "Value",
+                        editable: true,
+                        type: "input",
+                      },
+                    ]}
+                    data={state?.Policy ?? []}
+                    // onDataChange={handleDataChange}
+                    // onDataChange={handlePolicyChange}
+                    onDataChange={(updatedData) =>
+                      setState({ Policy: updatedData })
+                    }
+                    onSelectionChange={handleSelectionChange}
+                  />
+                </Grid>
+              </Grid>
+            </TabPanel>
+            <TabPanel value={value} index={1}>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 12 }}>
+                  {" "}
+                  <Button icon={faPlus} variant="secondary" onClick={addRow}>
+                    New
+                  </Button>
+                  <Button
+                    icon={faTrash}
+                    variant="secondary"
+                    onClick={() => {
+                      // setIsModalOpen(true);
+                      deleteRows();
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </Grid>
+                <Grid>
+                  {" "}
+                  <EditableDataTable
+                    columns={[
+                      {
+                        key: "period_type",
+                        label: "Periodtype",
+                        editable: true,
+                        type: "select",
+                        options: ["Daily", "Monthly", "None"],
+                      },
+                      {
+                        key: "policy_count",
+                        label: "Policy count",
+                        editable: true,
+                        type: "input",
+                      },
+                      {
+                        key: "absent_count",
+                        label: "Absent count",
+                        editable: true,
+                        type: "input",
+                      },
+
+                      // "start_time": 0,//int
+                      // "end_time": 60,//int
+                      // "period_type": "Daily",//Select Daily or Monthly
+                      // "type": "Count",//Select Count, Excuse, Absent
+                      // "value": 1 //int
+                    ]}
+                    data={
+                      state?.AbsentPolicy ?? [
+                        {
+                          id: 1,
+                          start_time: 0,
+                          end_time: 60,
+                          period_type: "Daily",
+                          type: "Count",
+                          value: 1,
+                        },
+                        {
+                          id: 2,
+                          start_time: 0,
+                          end_time: 60,
+                          period_type: "Daily",
+                          type: "Count",
+                          value: 1,
+                        },
+                      ]
+                    }
+                    onDataChange={(updatedData) =>
+                      setState({ AbsentPolicy: updatedData })
+                    }
+                    onSelectionChange={(ids) => setSelectedIds(ids)} // ✅ Capture selected rows
+                    // onDataChange={handleDataChange}
+                  />
+                </Grid>
+              </Grid>
+            </TabPanel>
+          </Box>
+        </div>
+      </MuiDialog>
     </>
   );
 };

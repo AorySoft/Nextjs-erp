@@ -12,6 +12,7 @@ import { Accordion, AccordionSummary, AccordionDetails, Grid, Typography } from 
 import CustomTextField from "@/components/ui/CustomTextField"
 import CustomSelectField from "@/components/ui/CustomSelectField"
 import MuiDialog from "@/components/ui/DialogBox"
+import apiClient from "@/services/apiClient";
 
 interface HolidayType {
   name: string
@@ -97,13 +98,15 @@ const HolidayTypePage = () => {
   const fetchHolidayTypes = async () => {
     try {
       setLoading(true)
-      // const response = await apiClient.get("/resource/Holiday Type?limit=100")
-      // if (response && Array.isArray(response.data)) {
-      //   setHolidayTypes(response.data)
-      // }
+      const response:any = await apiClient.get("/resource/Holiday List")
+      console.log(response, "response-holiday-types");
+      
+      if (response && Array.isArray(response?.data)) {
+        setHolidayTypes(response?.data)
+      }
 
       setTimeout(() => {
-        setHolidayTypes(mockHolidayTypes)
+        // setHolidayTypes(mockHolidayTypes)
         setLoading(false)
       }, 500)
     } catch (error) {
@@ -128,6 +131,8 @@ const HolidayTypePage = () => {
   }
 
   const handleDelete = async (holidayType: HolidayType) => {
+    console.log(holidayType, "holidayType");
+    // return;
     if (window.confirm(`Are you sure you want to delete ${holidayType.holiday_name}?`)) {
       try {
         // await apiClient.delete(`/resource/Holiday Type/${holidayType.name}`)
@@ -159,7 +164,7 @@ const HolidayTypePage = () => {
       searchable: false,
       render: (row: HolidayType) => (
         <div className="flex gap-2">
-          <Trash size={16} color={defaultColor?.main_blue} />
+          <Trash size={16} color={defaultColor?.main_blue} style={{ cursor: "pointer" }} onClick={() => handleDelete(row)} />
           <Edit size={16} color={defaultColor?.main_blue} />
           <SquareUserRound size={16} color={defaultColor?.main_blue} />
         </div>
@@ -180,7 +185,7 @@ const HolidayTypePage = () => {
       render: (row: HolidayType) => (
         <div className="flex items-center gap-2">
           <div className="flex gap-1">
-            {row.color_code.map((color, index) => (
+            {row?.color_code?.map((color, index) => (
               <div
                 key={index}
                 className="w-6 h-6 border border-gray-300 rounded"
@@ -189,7 +194,7 @@ const HolidayTypePage = () => {
               ></div>
             ))}
           </div>
-          <span className="text-sm">{row.color_code.map((color) => `#${color.replace("#", "")}`).join(", ")}</span>
+          <span className="text-sm">{row?.color_code?.map((color) => `#${color?.replace("#", "")}`).join(", ")}</span>
         </div>
       ),
     },
