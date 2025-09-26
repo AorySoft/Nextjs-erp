@@ -66,7 +66,7 @@ export const timeAttendanceSection: MenuSection = {
     {
       title: 'Process',
       items: [
-        { label: 'Daily Attendance Process', isFavorite: false },
+        { label: 'Daily Attendance Process', isFavorite: false, href: '/human-resource/time-attendance/process/daily-attendance-process' },
         { label: 'Monthly Attendance Process', isFavorite: false },
         { label: 'Daily Attendance Data', isFavorite: false },
         { label: 'Monthly Attendance Data', isFavorite: false },

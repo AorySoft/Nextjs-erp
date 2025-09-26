@@ -8,13 +8,13 @@ const apiClient = axios.create({
     "Accept": "application/json",
     "Expect": "", // 👈 prevent 417 error
   },
-  timeout: 10000,
+  // Remove default timeout to allow for longer timeouts when specified in individual requests
+  timeout: 600000, // 10 minutes default timeout
 });
 
 // Attach auth token automatically (ERPNext expects token key:secret)
 apiClient.interceptors.request.use((config) => {
     const token = process.env.NEXT_PUBLIC_ERP_TOKEN; // 👈 you stored key:secret here
-  
     if (token) {
       config.headers.Authorization = `token ${token}`;
     }
