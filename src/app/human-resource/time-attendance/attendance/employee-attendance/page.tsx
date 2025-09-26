@@ -93,9 +93,10 @@ interface APIEmployee {
 
 const EmployeeAttendance = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [employees, setEmployees] = useState<TableEmployee[]>([]);
+  const [employees, setEmployees] = useState<APIEmployee[]>([]);
   const [loading, setLoading] = useState(false);
   const [value, setValue] = React.useState(0);
+  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
 
   const [state, setState] = useReducer(
     (state: any, newState: any) => ({ ...state, ...newState }),
@@ -473,34 +474,43 @@ const EmployeeAttendance = () => {
       console.error("❌ Error fetching form options:", err);
     }
   };
-  const fetchAll = async () => {
+  const fetchAll = async (date: string = selectedDate) => {
     try {
-      const res: any = await apiClient.get(
-        '/resource/Attendance?fields=["employee","employee_name","department","attendance_date","in_time", "out_time", "department", "status"]&filters=[["attendance_date","=","2025-07-01"]]'
+      setLoading(true);
+      const res = await apiClient.get<{ data: APIEmployee[] }>(
+        `/resource/Attendance?fields=["employee","employee_name","department","attendance_date","in_time","out_time","department","status"]&filters=[["attendance_date","=","${date}"]]`
       );
-      if (res && Array.isArray(res.data)) {
-        const transformedEmployees = res.data.map((emp: APIEmployee) => ({
+      
+      if (res?.data && Array.isArray(res.data)) {
+        setEmployees(res.data.map(emp => ({
           attendance_date: emp.attendance_date || "",
           employee: emp.employee || "",
           employee_name: emp.employee_name || "",
           in_time: emp.in_time || "",
+          out_time: emp.out_time || "",
+          department: emp.department || "",
           status: emp.status || "",
-        }));
-        setEmployees(transformedEmployees);
+        })));
       }
-
-      // parallel or sequential fetch
-      //   fetchFormOptions();
-    } catch (err: any) {
-      console.error("API error ❌", err.response?.data || err.message);
+    } catch (err) {
+      const error = err as Error & { response?: { data?: any } };
+      console.error("API error", error.response?.data || error.message);
+      toast.error("Failed to fetch attendance data");
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newDate = e.target.value;
+    setSelectedDate(newDate);
+    // No need to call fetchAll here as it will be triggered by the useEffect
+  };
+
   useEffect(() => {
-    fetchAll();
+    fetchAll(selectedDate);
     fetchAllEmployees();
-    // fetchFormOptions();
-  }, []);
+  }, [selectedDate]);
 
   const columns = [
     {
@@ -624,19 +634,28 @@ if(!state.attendance_date){
           <h1 className="text-2xl font-semibold text-gray-800">
             Employee Attendance
           </h1>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <div className="mr-4">
+              <label htmlFor="attendance-date" className="block text-sm font-medium text-gray-700 mb-1">
+                Filter by Date:
+              </label>
+              <input
+                type="date"
+                id="attendance-date"
+                value={selectedDate}
+                onChange={handleDateChange}
+                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
             <button
               onClick={() => window.location.reload()}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors h-10"
             >
               Refresh
             </button>
             <button
-              onClick={() => {
-                // setIsModalOpen(true);
-                setState({ employee_dialog: true });
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              onClick={() => setState({ employee_dialog: true })}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors h-10"
             >
               <Plus size={20} />
               New Employee

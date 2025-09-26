@@ -23,16 +23,12 @@ import CustomSelectField from "@/components/ui/CustomSelectField";
 import CustomDateInputField from "@/components/ui/DatePicker";
 import { toast } from "react-toastify";
 
-
 interface TableLeaveType {
-  code: string;
-  leave_type: string;
-  leave_unit: string;
-  leaves: number;
-  renew_on: string;
-  max_avail_unit?: string;
-  marital_status?: string;
-  gender?: string;
+  name: string;
+  leave_type_name: string;
+  max_leaves_allowed: number;
+  custom_leave_unit: string | null;
+  custom_renew_on: string | null;
 }
 
 interface TabPanelProps {
@@ -64,43 +60,61 @@ function TabPanel(props: TabPanelProps) {
 const LeaveType = () => {
   const [leaveTypes, setLeaveTypes] = useState<TableLeaveType[]>([]);
   const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [value, setValue] = React.useState(0);
 
   const [state, setState] = useReducer(
     (state: any, newState: any) => ({ ...state, ...newState }),
     {
+      // Form field values
+      code: '',
+      leave_type_name: '',
+      custom_leave_unit: 'Days',
+      custom_renew_on: 'Every Calendar Year',
+      max_leaves_allowed: '',
+      max_continuous_days_allowed: '',
+      max_avail_unit: 'days',
+      carry_forward: '',
+      encashment: '',
+      marital_status: '',
+      gender: '',
+      entitle_on: '',
+      accrual_unit: '',
+      entitle_leaves: '',
+      request_before: '',
+      request_unit: 'Days',
+      
+      // Form field configurations
       // Basic Information fields
       basicFormFields: [
+        // {
+        //   input_name: "code",
+        //   input_label: "Code",
+        //   placeholder: "Enter Code",
+        //   type: "text",
+        //   required: false,
+        //   startIcon: <></>,
+        //   grid_size: 6,
+        //   isDisable: false,
+        // },
         {
-          input_name: "code",
-          input_label: "Code",
-          placeholder: "Enter Code",
-          type: "text",
-          required: true,
-          startIcon: <></>,
-          grid_size: 6,
-          isDisable: false,
-        },
-        {
-          input_name: "renew_on",
+          input_name: "custom_renew_on",
           input_label: "Renew On",
           placeholder: "Select Renew On",
           type: "select",
-          required: false,
+          required: true,
           startIcon: <></>,
           grid_size: 6,
           isDisable: false,
           options: [
-            { value: "calendar_year", label: "Every calendar year" },
-            { value: "joining_date", label: "Every joining date" },
-            { value: "monthly", label: "Monthly" },
-            { value: "quarterly", label: "Quarterly" },
+            { value: "Every Calendar Year", label: "Every Calendar Year" },
+            { value: "After a year of joining date", label: "After a year of joining date" },
           ],
         },
         {
-          input_name: "leave_type",
-          input_label: "Leave Type",
-          placeholder: "Enter Leave Type",
+          input_name: "leave_type_name",
+          input_label: "Leave Type Name",
+          placeholder: "Enter Leave Type Name",
           type: "text",
           required: true,
           startIcon: <></>,
@@ -108,7 +122,7 @@ const LeaveType = () => {
           isDisable: false,
         },
         {
-          input_name: "leave_unit",
+          input_name: "custom_leave_unit",
           input_label: "Leave Unit",
           placeholder: "Select Leave Unit",
           type: "select",
@@ -117,14 +131,14 @@ const LeaveType = () => {
           grid_size: 6,
           isDisable: false,
           options: [
-            { value: "days", label: "Days" },
-            { value: "hours", label: "Hours" },
+            { value: "Days", label: "Days" },
+            { value: "Hours", label: "Hours" },
           ],
         },
         {
-          input_name: "leaves",
-          input_label: "Leaves",
-          placeholder: "Enter Leaves",
+          input_name: "max_leaves_allowed",
+          input_label: "Max Leaves Allowed",
+          placeholder: "Enter Max Leaves Allowed",
           type: "number",
           required: true,
           startIcon: <></>,
@@ -136,9 +150,9 @@ const LeaveType = () => {
       // Policy fields
       policyFormFields: [
         {
-          input_name: "max_avail_unit",
-          input_label: "Max Avail Unit",
-          placeholder: "Enter Max Avail",
+          input_name: "max_continuous_days_allowed",
+          input_label: "Max Continuous Days Allowed",
+          placeholder: "Enter Max Continuous Days Allowed",
           type: "number",
           required: false,
           startIcon: <></>,
@@ -160,7 +174,7 @@ const LeaveType = () => {
           ],
         },
         {
-          input_name: "max_avail",
+          input_name: "max_leaves_allowed",
           input_label: "Max Avail",
           placeholder: "Enter Max Avail",
           type: "number",
@@ -199,10 +213,10 @@ const LeaveType = () => {
           grid_size: 4,
           isDisable: false,
           options: [
-            { value: "single", label: "Single" },
-            { value: "married", label: "Married" },
-            { value: "divorced", label: "Divorced" },
-            { value: "widowed", label: "Widowed" },
+            { value: "Single", label: "Single" },
+            { value: "Married", label: "Married" },
+            { value: "Divorced", label: "Divorced" },
+            { value: "Widowed", label: "Widowed" },
           ],
         },
         {
@@ -215,9 +229,9 @@ const LeaveType = () => {
           grid_size: 4,
           isDisable: false,
           options: [
-            { value: "male", label: "Male" },
-            { value: "female", label: "Female" },
-            { value: "other", label: "Other" },
+            { value: "Male", label: "Male" },
+            { value: "Female", label: "Female" },
+            { value: "Other", label: "Other" },
           ],
         },
       ],
@@ -234,9 +248,9 @@ const LeaveType = () => {
           grid_size: 6,
           isDisable: false,
           options: [
-            { value: "joining_date", label: "Joining Date" },
-            { value: "calendar_year", label: "Calendar Year" },
-            { value: "monthly", label: "Monthly" },
+            { value: "Joining Date", label: "Joining Date" },
+            { value: "Calendar Year", label: "Calendar Year" },
+            { value: "Monthly", label: "Monthly" },
           ],
         },
         {
@@ -249,9 +263,9 @@ const LeaveType = () => {
           grid_size: 6,
           isDisable: false,
           options: [
-            { value: "monthly", label: "Monthly" },
-            { value: "quarterly", label: "Quarterly" },
-            { value: "yearly", label: "Yearly" },
+            { value: "Monthly", label: "Monthly" },
+            { value: "Quarterly", label: "Quarterly" },
+            { value: "Yearly", label: "Yearly" },
           ],
         },
         {
@@ -288,20 +302,23 @@ const LeaveType = () => {
           grid_size: 6,
           isDisable: false,
           options: [
-            { value: "days", label: "Days" },
-            { value: "hours", label: "Hours" },
-            { value: "weeks", label: "Weeks" },
+            { value: "Days", label: "Days" },
+            { value: "Hours", label: "Hours" },
+            { value: "Weeks", label: "Weeks" },
           ],
         },
       ],
 
       // Checkbox states
-      allow_in_prob: false,
-      quota_validate: false,
-      paid_leave: false,
-      late_adjustable: false,
-      include_holidays: false,
-      early_dep_adjustable: false,
+      allow_in_prob: false,  // Allow in Probation
+      quota_validate: false, // Quota Validation
+      is_lwp: false,         // Is Leave Without Pay
+      custom_is_adjustable: false, // Is Adjustable
+      include_holidays: false,    // Include Holidays
+      early_dep_adjustable: false, // Early Departure Adjustable
+      // Legacy states (keep for backward compatibility if needed)
+      paid_leave: false,     // Legacy - use is_lwp instead
+      late_adjustable: false, // Legacy - use custom_is_adjustable instead
 
       leave_type_dialog: false,
     }
@@ -314,20 +331,38 @@ const LeaveType = () => {
   const fetchLeaveTypes = async () => {
     try {
       setLoading(true);
-      // Mock data for now - replace with actual API call
-      const mockData = [
-        { code: "01", leave_type: "Annual Leave (15d)", leave_unit: "Days", leaves: 15, renew_on: "Every calendar year" },
-        { code: "02", leave_type: "Annual Leaves (6d)", leave_unit: "Days", leaves: 6, renew_on: "Every calendar year" },
-        { code: "03", leave_type: "Umrah Leaves", leave_unit: "Days", leaves: 25, renew_on: "Every calendar year" },
-        { code: "04", leave_type: "Medical Leaves for HOD's", leave_unit: "Days", leaves: 30, renew_on: "Every calendar year" },
-        { code: "05", leave_type: "Watchman leaves (for family)", leave_unit: "Days", leaves: 32, renew_on: "Every calendar year" },
-        { code: "06", leave_type: "Unpaid Leaves", leave_unit: "Days", leaves: 31, renew_on: "Every calendar year" },
-        { code: "07", leave_type: "Emergency", leave_unit: "Days", leaves: 31, renew_on: "Every calendar year" },
-        { code: "08", leave_type: "Maternity leaves", leave_unit: "Days", leaves: 45, renew_on: "Every calendar year" },
-        { code: "09", leave_type: "Winter vacations", leave_unit: "Days", leaves: 10, renew_on: "Every calendar year" },
-        { code: "10", leave_type: "Summer vacations", leave_unit: "Days", leaves: 45, renew_on: "Every calendar year" },
-      ];
-      setLeaveTypes(mockData);
+      const apiUrl = `${process.env.NEXT_PUBLIC_API_URL}/resource/Leave%20Type?limit=100&fields=["name","leave_type_name","max_leaves_allowed","custom_leave_unit","custom_renew_on"]`;
+      
+      const response = await fetch(apiUrl, {
+        headers: {
+          'Authorization': `token ${process.env.NEXT_PUBLIC_ERP_TOKEN}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        toast.error('Failed to fetch leave types. Please check console for details.');
+        return;
+      }
+      
+      const result = await response.json();
+      
+      if (result.data) {
+        // Map the API response to match our table structure
+        const formattedData = result.data.map((item: any, index: number) => ({
+          id: index + 1, // Add sequential ID for S.No
+          name: item.name,
+          leave_type_name: item.leave_type_name,
+          max_leaves_allowed: item.max_leaves_allowed,
+          custom_leave_unit: item.custom_leave_unit || 'Days', // Default to 'Days' if null
+          custom_renew_on: item.custom_renew_on || 'Every calendar year' // Default if null
+        }));
+        
+        setLeaveTypes(formattedData);
+      }
     } catch (error) {
       console.error("Error fetching leave types:", error);
     } finally {
@@ -339,25 +374,49 @@ const LeaveType = () => {
     fetchLeaveTypes();
   }, []);
 
-  const columns = [
+  const columns: any[] = [
     {
       key: "action",
       label: "Actions",
       searchable: false,
-      render: () => (
+      render: (row: any) => (
         <div className="flex gap-2">
-          <Trash size={16} color={defaultColor?.main_blue} />
-          <Edit size={16} color={defaultColor?.main_blue} />
-          <View size={16} color={defaultColor?.main_blue} />
+          <Trash 
+            size={16} 
+            color={defaultColor?.main_blue} 
+            className="cursor-pointer hover:opacity-70" 
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteLeaveType(row.name);
+            }}
+          />
+          <Edit 
+            size={16} 
+            color={defaultColor?.main_blue} 
+            className="cursor-pointer hover:opacity-70" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(row);
+            }}
+          />
+          <View 
+            size={16} 
+            color={defaultColor?.main_blue} 
+            className="cursor-pointer hover:opacity-70" 
+            onClick={(e) => {
+              e.stopPropagation();
+              // Handle view
+            }}
+          />
         </div>
       ),
     },
-    { key: "sno", label: "S.No", searchable: false },
-    { key: "code", label: "Code", searchable: true },
-    { key: "leave_type", label: "Leave Type", searchable: true },
-    { key: "leave_unit", label: "Leave Unit", searchable: true },
-    { key: "leaves", label: "Leaves", searchable: true },
-    { key: "renew_on", label: "Renew On", searchable: true },
+    { key: "id", label: "S.No", searchable: false },
+    { key: "name", label: "Name", searchable: true },
+    { key: "leave_type_name", label: "Leave Type", searchable: true },
+    { key: "max_leaves_allowed", label: "Max Leaves Allowed", searchable: true },
+    { key: "custom_leave_unit", label: "Leave Unit", searchable: true },
+    { key: "custom_renew_on", label: "Renew On", searchable: true },
   ];
 
   const validateForm = (formFields: any[], formState: any) => {
@@ -373,43 +432,189 @@ const LeaveType = () => {
     return true;
   };
 
-  const handleCreateLeaveType = async () => {
+  const fetchLeaveTypeById = async (id: string) => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/resource/Leave%20Type/${encodeURIComponent(id)}`,
+        {
+          headers: {
+            'Authorization': `token ${process.env.NEXT_PUBLIC_ERP_TOKEN}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch leave type details');
+      }
+
+      const data = await response.json();
+      
+      // Map the API response to form state
+      const formState = {
+        name: data.data.name,
+        leave_type_name: data.data.leave_type_name,
+        max_leaves_allowed: data.data.max_leaves_allowed,
+        custom_leave_unit: data.data.custom_leave_unit || 'Days',
+        custom_renew_on: data.data.custom_renew_on || 'Every Calendar Year',
+        max_continuous_days_allowed: data.data.max_continuous_days_allowed || 0,
+        marital_status: data.data.marital_status || '',
+        gender: data.data.gender || '',
+        entitle_on: data.data.entitle_on || '',
+        accrual_unit: data.data.accrual_unit || '',
+        request_before: data.data.request_before || 0,
+        request_unit: data.data.request_unit || 'Days',
+        allow_in_prob: data.data.allow_in_prob === 1,
+        quota_validate: data.data.quota_validate === 1,
+        is_lwp: data.data.is_lwp === 1,
+        custom_is_adjustable: data.data.custom_is_adjustable === 1,
+        include_holidays: data.data.include_holidays === 1,
+        early_dep_adjustable: data.data.early_dep_adjustable === 1,
+      };
+
+      setState(formState);
+    } catch (error) {
+      console.error('Error fetching leave type:', error);
+      toast.error('Failed to load leave type details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEdit = (leaveType: TableLeaveType) => {
+    setEditingId(leaveType.name);
+    fetchLeaveTypeById(leaveType.name);
+    setState({ leave_type_dialog: true });
+  };
+
+  const deleteLeaveType = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this leave type?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/resource/Leave%20Type/${encodeURIComponent(id)}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `token ${process.env.NEXT_PUBLIC_ERP_TOKEN}`,
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete leave type');
+      }
+
+      toast.success('Leave type deleted successfully');
+      fetchLeaveTypes(); // Refresh the list
+    } catch (error) {
+      console.error('Error deleting leave type:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete leave type');
+    }
+  };
+
+  const resetForm = () => {
+    setState({
+      code: '',
+      leave_type_name: '',
+      custom_leave_unit: 'Days',
+      custom_renew_on: 'Every Calendar Year',
+      max_leaves_allowed: '',
+      max_continuous_days_allowed: '',
+      max_avail_unit: 'days',
+      carry_forward: '',
+      encashment: '',
+      marital_status: '',
+      gender: '',
+      entitle_on: '',
+      accrual_unit: '',
+      entitle_leaves: '',
+      request_before: '',
+      request_unit: 'Days',
+      allow_in_prob: false,
+      quota_validate: false,
+      is_lwp: false,
+      custom_is_adjustable: false,
+      include_holidays: false,
+      early_dep_adjustable: false,
+      paid_leave: false,
+      late_adjustable: false,
+    });
+    setEditingId(null);
+  };
+
+  const handleSaveLeaveType = async () => {
     try {
       const isValid = validateForm(state.basicFormFields, state);
       if (!isValid) return;
 
-      const send_object = {
-        code: state.code,
-        leave_type: state.leave_type,
-        leave_unit: state.leave_unit,
-        leaves: state.leaves,
-        renew_on: state.renew_on,
-        max_avail_unit: state.max_avail_unit,
-        marital_status: state.marital_status,
-        gender: state.gender,
-        entitle_on: state.entitle_on,
-        accrual_unit: state.accrual_unit,
-        entitle_leaves: state.entitle_leaves,
-        request_before: state.request_before,
-        request_unit: state.request_unit,
-        allow_in_prob: state.allow_in_prob,
-        quota_validate: state.quota_validate,
-        paid_leave: state.paid_leave,
-        late_adjustable: state.late_adjustable,
-        include_holidays: state.include_holidays,
-        early_dep_adjustable: state.early_dep_adjustable,
+      const payload = {
+        data: {
+          name: state.name,
+          leave_type_name: state.leave_type_name,
+          custom_leave_unit: state.custom_leave_unit || 'Days',
+          max_leaves_allowed: parseFloat(state.max_leaves_allowed) || 0,
+          custom_renew_on: state.custom_renew_on || 'Every Calendar Year',
+          max_continuous_days_allowed: parseFloat(state.max_continuous_days_allowed) || 0,
+          marital_status: state.marital_status,
+          gender: state.gender,
+          entitle_on: state.entitle_on,
+          accrual_unit: state.accrual_unit,
+          entitle_leaves: parseFloat(state.max_leaves_allowed) || 0,
+          request_before: parseFloat(state.request_before) || 0,
+          request_unit: state.request_unit || 'Days',
+          allow_in_prob: state.allow_in_prob ? 1 : 0,
+          quota_validate: state.quota_validate ? 1 : 0,
+          is_lwp: state.is_lwp ? 1 : 0,
+          custom_is_adjustable: state.custom_is_adjustable ? 1 : 0,
+          include_holidays: state.include_holidays ? 1 : 0,
+          early_dep_adjustable: state.early_dep_adjustable ? 1 : 0,
+          doctype: 'Leave Type',
+          docstatus: 0,
+          idx: 0
+        }
       };
 
-      console.log("send_object", send_object);
-      // Replace with actual API call
-      // const response = await apiClient.post(`/resource/LeaveType`, send_object);
+      const url = editingId 
+        ? `${process.env.NEXT_PUBLIC_API_URL}/resource/Leave%20Type/${encodeURIComponent(editingId)}`
+        : `${process.env.NEXT_PUBLIC_API_URL}/resource/Leave%20Type`;
+
+      const method = editingId ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Authorization': `token ${process.env.NEXT_PUBLIC_ERP_TOKEN}`,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('API Error:', errorData);
+        toast.error(errorData.message || `Failed to ${editingId ? 'update' : 'create'} leave type`);
+        return;
+      }
       
-      toast.success("Leave Type created successfully");
+      const result = await response.json();
+      console.log('API Response:', result);
+      
+      toast.success(`Leave Type ${editingId ? 'updated' : 'created'} successfully`);
       setState({ leave_type_dialog: false });
+      resetForm();
       fetchLeaveTypes();
     } catch (error) {
-      console.error("Error creating leave type:", error);
-      toast.error("Error creating leave type");
+      console.error(`Error ${editingId ? 'updating' : 'creating'} leave type:`, error);
+      toast.error(`Error ${editingId ? 'updating' : 'creating'} leave type`);
     }
   };
 
@@ -426,7 +631,10 @@ const LeaveType = () => {
               Refresh
             </button>
             <button
-              onClick={() => setState({ leave_type_dialog: true })}
+              onClick={() => {
+                resetForm();
+                setState({ leave_type_dialog: true });
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
@@ -446,12 +654,15 @@ const LeaveType = () => {
 
       <MuiDialog
         open={state?.leave_type_dialog}
-        onClose={() => setState({ leave_type_dialog: false })}
+        onClose={() => {
+          setState({ leave_type_dialog: false });
+          resetForm();
+        }}
         multiple_btn={true}
-        title="Leave Type"
+        title={`${editingId ? 'Edit' : 'Create New'} Leave Type`}
         description={false}
         maxWidth="lg"
-        onSave={() => handleCreateLeaveType()}
+        onSave={handleSaveLeaveType}
       >
         <div id="leave_type-parent">
           <Accordion defaultExpanded>
@@ -514,10 +725,9 @@ const LeaveType = () => {
                       />
                     ) : (
                       <CustomTextField
-                        input_value={state[field.input_name]}
+                        input_value={state[field.input_name] || ''}
                         onchange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                           setState({
-                            ...state,
                             [field.input_name]: e.target.value,
                           })
                         }
@@ -528,7 +738,7 @@ const LeaveType = () => {
                         placeholder={field.placeholder}
                         input_label={field.input_label}
                         isDisable={field.isDisable}
-                        type={field.type}
+                        input_type={field.type || 'text'}
                       />
                     )}
                   </Grid>
@@ -571,10 +781,9 @@ const LeaveType = () => {
                       />
                     ) : (
                       <CustomTextField
-                        input_value={state[field.input_name]}
+                        input_value={state[field.input_name] || ''}
                         onchange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                           setState({
-                            ...state,
                             [field.input_name]: e.target.value,
                           })
                         }
@@ -585,7 +794,7 @@ const LeaveType = () => {
                         placeholder={field.placeholder}
                         input_label={field.input_label}
                         isDisable={field.isDisable}
-                        type={field.type}
+                        input_type={field.type || 'text'}
                       />
                     )}
                   </Grid>
@@ -620,10 +829,9 @@ const LeaveType = () => {
                       />
                     ) : (
                       <CustomTextField
-                        input_value={state[field.input_name]}
+                        input_value={state[field.input_name] || ''}
                         onchange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                           setState({
-                            ...state,
                             [field.input_name]: e.target.value,
                           })
                         }
@@ -634,7 +842,7 @@ const LeaveType = () => {
                         placeholder={field.placeholder}
                         input_label={field.input_label}
                         isDisable={field.isDisable}
-                        type={field.type}
+                        input_type={field.type || 'text'}
                       />
                     )}
                   </Grid>
@@ -668,20 +876,20 @@ const LeaveType = () => {
                     <FormControlLabel
                       control={
                         <Checkbox
-                          checked={state.paid_leave}
-                          onChange={(e) => setState({ paid_leave: e.target.checked })}
+                          checked={state.is_lwp}
+                          onChange={(e) => setState({ is_lwp: e.target.checked })}
                         />
                       }
-                      label="Paid Leave"
+                      label="Is Leave Without Pay"
                     />
                     <FormControlLabel
                       control={
                         <Checkbox
-                          checked={state.late_adjustable}
-                          onChange={(e) => setState({ late_adjustable: e.target.checked })}
+                          checked={state.custom_is_adjustable}
+                          onChange={(e) => setState({ custom_is_adjustable: e.target.checked })}
                         />
                       }
-                      label="Late Adjustable"
+                      label="Is Adjustable"
                     />
                     <FormControlLabel
                       control={
@@ -730,10 +938,9 @@ const LeaveType = () => {
                       />
                     ) : (
                       <CustomTextField
-                        input_value={state[field.input_name]}
+                        input_value={state[field.input_name] || ''}
                         onchange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
                           setState({
-                            ...state,
                             [field.input_name]: e.target.value,
                           })
                         }
@@ -744,7 +951,7 @@ const LeaveType = () => {
                         placeholder={field.placeholder}
                         input_label={field.input_label}
                         isDisable={field.isDisable}
-                        type={field.type}
+                        input_type={field.type || 'text'}
                       />
                     )}
                   </Grid>
