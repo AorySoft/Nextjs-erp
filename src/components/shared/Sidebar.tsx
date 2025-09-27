@@ -3,6 +3,11 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBuilding, faUser, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { config } from '@fortawesome/fontawesome-svg-core';
+
+// Tell Font Awesome to skip adding the CSS automatically since it's already imported in globals.css
+config.autoAddCss = false;
+
 import SearchInput from '../ui/SearchInput';
 import { NavigationItem } from '@/types';
 import Image from 'next/image';
@@ -66,13 +71,15 @@ export default function Sidebar({ className = "" }: SidebarProps) {
           >
             <FontAwesomeIcon 
               icon={item.icon === 'building' ? faBuilding : faUser} 
-              className="text-[16px]"
+              className="text-[16px] w-4 h-4"
+              fixedWidth
             />
             {item.label}
             {item.hasChevron && (
               <FontAwesomeIcon 
                 icon={faChevronRight} 
-                className="ml-auto text-[12px]"
+                className="ml-auto text-[12px] w-3 h-3"
+                fixedWidth
               />
             )}
           </a>
