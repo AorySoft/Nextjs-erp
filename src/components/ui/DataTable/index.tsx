@@ -7,6 +7,7 @@ interface Column {
   key: string;
   label: string;
   searchable?: boolean;
+  sortable?: boolean;
   render?: (row: unknown, index: number) => React.ReactNode;
 }
 

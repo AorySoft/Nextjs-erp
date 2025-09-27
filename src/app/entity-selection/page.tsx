@@ -1,14 +1,14 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { ChevronDown, Search } from "lucide-react";
-import axios from "axios";
 import { toast } from 'react-toastify';
 import Image from "next/image";
 import backImg from "../login/Benckmark-logo.png";
+import { fetchEntities } from '@/lib/auth';
 
 interface Branch {
-  name: string;
-  branch_code?: string;
+  name: string;        // Unique ID
+  branch: string;      // Display name
   [key: string]: unknown;
 }
 
@@ -26,14 +26,18 @@ const EntitySelectionPage = () => {
   const fetchBranches = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.get("/api/branches");
+      const result = await fetchEntities();
       
-      if (response.data && response.data.data) {
-        setBranches(response.data.data);
+      if (result.success && result.data) {
+        setBranches(result.data);
         // Set default selection to first branch if available
-        if (response.data.data.length > 0) {
-          setSelectedEntity(response.data.data[0].name);
+        if (result.data.length > 0) {
+          setSelectedEntity(result.data[0].name); // Use name as the unique ID
         }
+      } else {
+        const errorMessage = result.error || "No entities available";
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (error: unknown) {
       console.error("Error fetching branches:", error);
@@ -78,6 +82,7 @@ const EntitySelectionPage = () => {
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <div
@@ -153,7 +158,7 @@ const EntitySelectionPage = () => {
                     <option value="">Select Your Entity</option>
                     {branches.map((branch) => (
                       <option key={branch.name} value={branch.name}>
-                        {branch.name}
+                        {branch.branch || branch.name}
                       </option>
                     ))}
                   </select>

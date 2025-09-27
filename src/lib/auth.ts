@@ -81,17 +81,62 @@ export const clearSession = (): void => {
   console.log('Session cleared');
 };
 
-// Logout function that calls the API
-export const logout = async (): Promise<void> => {
+// Direct API login function
+export const loginUser = async (username: string, password: string): Promise<{ success: boolean; data?: any; error?: string }> => {
   try {
-    const response = await fetch('/api/auth/logout', {
+    const response = await fetch('https://erp.thebenchmark.com.pk/api/method/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: JSON.stringify({
+        usr: username,
+        pwd: password,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.message === 'Logged In') {
+      return { success: true, data };
+    } else {
+      return { success: false, error: data.message || 'Login failed' };
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
+};
+
+// Direct API logout function
+export const logoutUser = async (): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const response = await fetch('https://erp.thebenchmark.com.pk/api/method/logout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
     });
 
     if (response.ok) {
+      return { success: true };
+    } else {
+      return { success: false, error: 'Logout failed' };
+    }
+  } catch (error) {
+    console.error('Logout error:', error);
+    return { success: false, error: 'Network error during logout' };
+  }
+};
+
+// Logout function that calls the API
+export const logout = async (): Promise<void> => {
+  try {
+    const result = await logoutUser();
+    
+    if (result.success) {
       console.log('Logout successful');
     } else {
       console.warn('Logout API call failed, but clearing local session');
@@ -101,7 +146,8 @@ export const logout = async (): Promise<void> => {
   } finally {
     // Always clear local session regardless of API response
     clearSession();
-    window.location.href = '/login';
+    // Force redirect to login page
+    window.location.replace('/login');
   }
 };
 
@@ -147,6 +193,31 @@ export const saveSession = (sessionData: Record<string, unknown>, rememberMe: bo
   document.cookie = `userSession=${cookieValue}; path=/; ${maxAge}SameSite=Lax`;
   
   console.log(`Session saved to ${rememberMe ? 'localStorage' : 'sessionStorage'}:`, userSession);
+};
+
+// Direct API function to fetch entities
+export const fetchEntities = async (): Promise<{ success: boolean; data?: any[]; error?: string }> => {
+  try {
+    const response = await fetch('https://erp.thebenchmark.com.pk/api/resource/Branch?fields=["name","branch"]', {
+      method: 'GET',
+      headers: {
+        'Authorization': `token ${process.env.NEXT_PUBLIC_ERP_TOKEN}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.data) {
+      return { success: true, data: data.data };
+    } else {
+      return { success: false, error: 'Failed to fetch entities' };
+    }
+  } catch (error) {
+    console.error('Fetch entities error:', error);
+    return { success: false, error: 'Network error. Please try again.' };
+  }
 };
 
 // Auto-logout on session expiry

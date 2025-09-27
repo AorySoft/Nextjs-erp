@@ -17,6 +17,11 @@ apiClient.interceptors.request.use((config) => {
     if (token) {
       config.headers.Authorization = `token ${token}`;
     }
+    
+    // Remove Expect header to prevent 417 errors
+    if (config.headers) {
+      delete config.headers['Expect'];
+    }
   
     return config;
   });

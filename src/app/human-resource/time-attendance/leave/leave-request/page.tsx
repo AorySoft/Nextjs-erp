@@ -12,16 +12,16 @@ import {
   Tabs,
   Checkbox,
   FormControlLabel,
-  Grid,
 } from "@mui/material"
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
-import { SquareUserRound, Plus } from "lucide-react"
-import DashboardLayout from "@/components/shared/DashboardLayout"
+import { SquareUserRound, Plus, Edit, Trash } from "lucide-react"
+//import DashboardLayout from "@/components/shared/DashboardLayout"
 import DataTable from "@/components/ui/DataTable"
 import MuiDialog from "@/components/ui/DialogBox"
 import CustomTextField from "@/components/ui/CustomTextField"
 import CustomDateInputField from "@/components/ui/DatePicker"
 import CustomSelectField from "@/components/ui/CustomSelectField"
+import request from "@/services/apiClient"
 
 // Initial state for leave request form
 const initialLeaveRequestState = {
@@ -29,10 +29,13 @@ const initialLeaveRequestState = {
   request_date: new Date().toISOString().split("T")[0],
   employee: "",
   reason: "",
+  description: "", // API field
+  company: "The Benchmark", // API field - default value
   leave_unit: "Days",
   leave_type: "",
   from_date: new Date().toISOString().split("T")[0],
   till_date: new Date().toISOString().split("T")[0],
+  to_date: new Date().toISOString().split("T")[0], // API field
   leave_days: "1",
   un_paid: false,
   attachments: [],
@@ -66,7 +69,7 @@ const initialAttachmentState = {
 }
 
 // Reducer for leave request form
-const leaveRequestReducer = (state, action) => {
+const leaveRequestReducer = (state: any, action: any) => {
   switch (action.type) {
     case "SET_FIELD":
       return { ...state, [action.field]: action.value }
@@ -77,7 +80,7 @@ const leaveRequestReducer = (state, action) => {
     case "REMOVE_ATTACHMENT":
       return {
         ...state,
-        attachments: state.attachments.filter((_, index) => index !== action.index),
+        attachments: state.attachments.filter((_: any, index: any) => index !== action.index),
       }
     default:
       return state
@@ -85,7 +88,7 @@ const leaveRequestReducer = (state, action) => {
 }
 
 // Reducer for attachment form
-const attachmentReducer = (state, action) => {
+const attachmentReducer = (state: any, action: any) => {
   switch (action.type) {
     case "SET_FIELD":
       return { ...state, [action.field]: action.value }
@@ -95,6 +98,18 @@ const attachmentReducer = (state, action) => {
       return state
   }
 }
+
+
+const companyOptions = [
+  { label: "The Benchmark", value: "The Benchmark" },
+  { label: "Other Company", value: "Other Company" },
+]
+
+const leaveUnitOptions = [
+  { label: "Days", value: "Days" },
+  { label: "Hours", value: "Hours" },
+]
+
 
 // Form field configurations
 const basicInfoFields = [
@@ -122,8 +137,24 @@ const basicInfoFields = [
     gridSize: 12,
   },
   {
+    name: "company",
+    label: "Company",
+    type: "select",
+    options: companyOptions,
+    required: true,
+    gridSize: 6,
+  },
+  {
     name: "reason",
     label: "Reason",
+    type: "textarea",
+    required: true,
+    rows: 4,
+    gridSize: 12,
+  },
+  {
+    name: "description",
+    label: "Description",
     type: "textarea",
     required: true,
     rows: 4,
@@ -172,37 +203,24 @@ const attachmentFields = [
   },
 ]
 
-// --- Static options (add after imports) ---
-const employeeOptions = [
-  { label: "Ali Khan", value: "emp001" },
-  { label: "Sara Ahmed", value: "emp002" },
-  { label: "Bilal Hussain", value: "emp003" },
-]
 
-const leaveUnitOptions = [
-  { label: "Days", value: "Days" },
-  { label: "Hours", value: "Hours" },
-]
+// Helper function to format dates
+const formatDate = (dateString: string) => {
+  if (!dateString) return "-"
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-GB') // DD/MM/YYYY format
+  } catch {
+    return dateString
+  }
+}
 
-const leaveTypeOptions = [
-  { label: "Annual Leave", value: "annual" },
-  { label: "Sick Leave", value: "sick" },
-  { label: "Casual Leave", value: "casual" },
-]
+// Helper function to format numbers
+const formatNumber = (value: number | string) => {
+  if (value === null || value === undefined) return "-"
+  return typeof value === 'number' ? value.toString() : value
+}
 
-// Data table columns
-const columns = [
-  { key: "actions", label: "Actions", sortable: false, searchable: false },
-  { key: "sno", label: "S.No", sortable: true, searchable: false },
-  { key: "request_no", label: "Request No", sortable: true, searchable: true },
-  { key: "request_date", label: "Request Date", sortable: true, searchable: true },
-  { key: "employee_id", label: "Employee ID", sortable: true, searchable: true },
-  { key: "employee_name", label: "Employee Name", sortable: true, searchable: true },
-  { key: "leave_type", label: "Leave Type", sortable: true, searchable: true },
-  { key: "from_date", label: "From Date", sortable: true, searchable: true },
-  { key: "till_date", label: "Till Date", sortable: true, searchable: true },
-  { key: "leave_days", label: "Leave Days", sortable: true, searchable: true },
-]
 
 const attachmentColumns = [
   { key: "sno", label: "S.No" },
@@ -224,55 +242,366 @@ export default function LeaveRequestPage() {
   const [isLeaveRequestModalOpen, setIsLeaveRequestModalOpen] = useState(false)
   const [isAttachmentModalOpen, setIsAttachmentModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState(0)
-  const [leaveRequests, setLeaveRequests] = useState([])
+  const [leaveRequests, setLeaveRequests] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [leaveTypes, setLeaveTypes] = useState<any[]>([])
+  const [loadingLeaveTypes, setLoadingLeaveTypes] = useState(false)
+  const [employees, setEmployees] = useState<any[]>([])
+  const [loadingEmployees, setLoadingEmployees] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [editingRecordId, setEditingRecordId] = useState<string | null>(null)
 
   // Mock data for demonstration
   const mockLeaveRequests = []
 
+  // Transform leave types for dropdown
+  const leaveTypeOptions = leaveTypes.map(leaveType => ({
+    label: leaveType.leave_type_name,
+    value: leaveType.name
+  }))
+
+  // Transform employees for dropdown
+  const employeeOptions = employees.map(employee => ({
+    label: employee.employee_name,
+    value: employee.name
+  }))
+
   useEffect(() => {
-    setLeaveRequests(mockLeaveRequests)
+    fetchAll()
+    fetchLeaveTypes()
+    fetchEmployees()
   }, [])
 
   const fetchAll = async () => {
     try {
       setLoading(true)
-      // API call would go here
-      // const response = await apiClient.get('/resource/LeaveRequest')
-      setLeaveRequests(mockLeaveRequests)
+      const response = await request.get('/resource/Leave Application', {
+        fields: '["name","leave_type","employee_name","employee","from_date","to_date","total_leave_days"]'
+      }) as { data: any[] }
+      console.log("Fetched leave requests:", response.data)
+      setLeaveRequests(response.data || [])
     } catch (error) {
       console.error("Error fetching leave requests:", error)
+      setLeaveRequests([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchLeaveTypes = async () => {
+    try {
+      setLoadingLeaveTypes(true)
+      const response = await request.get('/resource/Leave Type', {
+        limit: 100,
+        fields: '["name","leave_type_name"]'
+      }) as { data: any[] }
+      setLeaveTypes(response.data || [])
+    } catch (error) {
+      console.error("Error fetching leave types:", error)
+      setLeaveTypes([])
+    } finally {
+      setLoadingLeaveTypes(false)
+    }
+  }
+
+  const fetchEmployees = async () => {
+    try {
+      setLoadingEmployees(true)
+      const response = await request.get('/resource/Employee', {
+        fields: '["name","attendance_device_id","employee_name","branch","designation","department","cell_number","custom_employment_category","employment_type"]',
+        limit_page_length: 0
+      }) as { data: any[] }
+      setEmployees(response.data || [])
+    } catch (error) {
+      console.error("Error fetching employees:", error)
+      setEmployees([])
+    } finally {
+      setLoadingEmployees(false)
     }
   }
 
   const handleLeaveRequestSubmit = async () => {
     try {
       setLoading(true)
-      // API call would go here
-      // await createLeaveRequest(leaveRequestState)
-      console.log("Leave Request submitted:", leaveRequestState)
+      
+      // Validate required fields
+      const requiredFields = ['employee', 'leave_type', 'company', 'from_date', 'to_date', 'description']
+      const missingFields = requiredFields.filter(field => !leaveRequestState[field])
+      
+      if (missingFields.length > 0) {
+        alert(`Please fill in the following required fields: ${missingFields.join(', ')}`)
+        return
+      }
+      
+      // Prepare API body with only the required fields
+      const apiBody = {
+        employee: leaveRequestState.employee,
+        leave_type: leaveRequestState.leave_type,
+        company: leaveRequestState.company,
+        from_date: leaveRequestState.from_date,
+        to_date: leaveRequestState.to_date,
+        description: leaveRequestState.description
+      }
 
+      console.log("Submitting Leave Request with body:", apiBody)
+      
+      let response
+      if (isEditMode && editingRecordId) {
+        // Update existing leave application
+        console.log("Updating record with ID:", editingRecordId)
+        try {
+          response = await request.patch(`/resource/Leave Application/${editingRecordId}`, apiBody)
+          console.log("Leave Request updated successfully!")
+        } catch (updateError: any) {
+          console.error("Update error:", updateError)
+          if (updateError.response?.status === 404) {
+            alert(`Record with ID "${editingRecordId}" not found. The record may have been deleted. Refreshing the table...`)
+            // Refresh the data table to get updated records
+            await fetchAll()
+            return
+          }
+          throw updateError
+        }
+      } else {
+        // Create new leave application
+        response = await request.post('/resource/Leave Application', apiBody)
+        console.log("Leave Request submitted successfully!")
+      }
+      
+      console.log("API Response:", response)
+      
+      // Refresh the data table
+      await fetchAll()
+      
       setIsLeaveRequestModalOpen(false)
+      setIsEditMode(false)
+      setEditingRecordId(null)
       leaveRequestDispatch({ type: "RESET_FORM" })
       setActiveTab(0)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error submitting leave request:", error)
+      
+      // Show more detailed error information
+      let errorMessage = "Error submitting leave request. Please try again."
+      if (error.response) {
+        // Server responded with error status
+        errorMessage = `Error ${error.response.status}: ${error.response.statusText}`
+        if (error.response.data) {
+          console.error("Error response data:", error.response.data)
+          errorMessage += ` - ${JSON.stringify(error.response.data)}`
+        }
+      } else if (error.request) {
+        // Request was made but no response received
+        errorMessage = "No response from server. Please check your connection."
+      }
+      
+      alert(errorMessage)
     } finally {
       setLoading(false)
     }
   }
 
-  const renderFormField = (field, state, dispatch) => {
+  const handleEditLeaveRequest = async (row: any) => {
+    try {
+      console.log("Editing leave request:", row)
+      console.log("Record ID being used:", row.name)
+      
+      // First, let's try to fetch the record to verify it exists
+      let fullRecord: any
+      try {
+        fullRecord = await request.get(`/resource/Leave Application/${row.name}`)
+        console.log("Full record details:", fullRecord.data)
+      } catch (fetchError: any) {
+        console.error("Error fetching record details:", fetchError)
+        if (fetchError.response?.status === 404) {
+          alert(`Record with ID "${row.name}" not found. The record may have been deleted or the ID is incorrect.`)
+          return
+        }
+        throw fetchError
+      }
+      
+      // Populate form with existing data
+      leaveRequestDispatch({
+        type: "SET_FIELD",
+        field: "request_no",
+        value: fullRecord.data.name || ""
+      })
+      leaveRequestDispatch({
+        type: "SET_FIELD",
+        field: "request_date",
+        value: fullRecord.data.creation || new Date().toISOString().split("T")[0]
+      })
+      leaveRequestDispatch({
+        type: "SET_FIELD",
+        field: "employee",
+        value: fullRecord.data.employee || ""
+      })
+      leaveRequestDispatch({
+        type: "SET_FIELD",
+        field: "company",
+        value: fullRecord.data.company || "The Benchmark"
+      })
+      leaveRequestDispatch({
+        type: "SET_FIELD",
+        field: "reason",
+        value: fullRecord.data.reason || ""
+      })
+      leaveRequestDispatch({
+        type: "SET_FIELD",
+        field: "description",
+        value: fullRecord.data.description || ""
+      })
+      leaveRequestDispatch({
+        type: "SET_FIELD",
+        field: "leave_type",
+        value: fullRecord.data.leave_type || ""
+      })
+      leaveRequestDispatch({
+        type: "SET_FIELD",
+        field: "from_date",
+        value: fullRecord.data.from_date || ""
+      })
+      leaveRequestDispatch({
+        type: "SET_FIELD",
+        field: "till_date",
+        value: fullRecord.data.to_date || ""
+      })
+      leaveRequestDispatch({
+        type: "SET_FIELD",
+        field: "to_date",
+        value: fullRecord.data.to_date || ""
+      })
+      leaveRequestDispatch({
+        type: "SET_FIELD",
+        field: "total_leave_days",
+        value: fullRecord.data.total_leave_days || ""
+      })
+      
+      // Set edit mode and open the modal for editing
+      setIsEditMode(true)
+      setEditingRecordId(row.name)
+      setIsLeaveRequestModalOpen(true)
+      
+    } catch (error) {
+      console.error("Error fetching leave request details:", error)
+      alert("Failed to load leave request details for editing")
+    }
+  }
+
+  const handleDeleteLeaveRequest = async (row: any) => {
+    try {
+      if (window.confirm(`Are you sure you want to delete leave request "${row.name}"? This action cannot be undone.`)) {
+        console.log("Deleting leave request:", row)
+        console.log("Record ID being deleted:", row.name)
+        
+        try {
+          await request.delete(`/resource/Leave Application/${row.name}`)
+          console.log("Leave request deleted successfully")
+          
+          // Refresh the data table
+          await fetchAll()
+          
+          alert("Leave request deleted successfully")
+        } catch (deleteError: any) {
+          console.error("Delete error:", deleteError)
+          if (deleteError.response?.status === 404) {
+            alert(`Record with ID "${row.name}" not found. The record may have already been deleted. Refreshing the table...`)
+            // Refresh the data table to get updated records
+            await fetchAll()
+            return
+          } else if (deleteError.response?.status === 403) {
+            alert("You don't have permission to delete this leave request.")
+            return
+          } else if (deleteError.response?.status === 400) {
+            alert("Cannot delete this leave request. It may be in a state that prevents deletion.")
+            return
+          }
+          throw deleteError
+        }
+      }
+    } catch (error: any) {
+      console.error("Error deleting leave request:", error)
+      if (error.response?.status === 404) {
+        alert("Record not found. It may have already been deleted.")
+      } else if (error.response?.status === 403) {
+        alert("You don't have permission to delete this leave request.")
+      } else if (error.response?.status === 400) {
+        alert("Cannot delete this leave request. It may be in a state that prevents deletion.")
+      } else {
+        alert(`Error deleting leave request: ${error.message || "Please try again."}`)
+      }
+    }
+  }
+
+  // Data table columns - updated to match API response
+  const columns = [
+    { 
+      key: "actions", 
+      label: "Actions", 
+      sortable: false, 
+      searchable: false,
+      render: (row: any, index: number) => (
+        <div className="flex gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEditLeaveRequest(row);
+            }}
+            className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded"
+            title="Edit"
+          >
+            <Edit size={16} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteLeaveRequest(row);
+            }}
+            className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded"
+            title="Delete"
+          >
+            <Trash size={16} />
+          </button>
+        </div>
+      )
+    },
+    { key: "sno", label: "S.No", sortable: true, searchable: false },
+    { key: "name", label: "Request No", sortable: true, searchable: true },
+    { key: "employee_name", label: "Employee Name", sortable: true, searchable: true },
+    { key: "employee", label: "Employee ID", sortable: true, searchable: true },
+    { key: "leave_type", label: "Leave Type", sortable: true, searchable: true },
+    { 
+      key: "from_date", 
+      label: "From Date", 
+      sortable: true, 
+      searchable: true,
+      render: (row: any) => formatDate(row.from_date)
+    },
+    { 
+      key: "to_date", 
+      label: "To Date", 
+      sortable: true, 
+      searchable: true,
+      render: (row: any) => formatDate(row.to_date)
+    },
+    { 
+      key: "total_leave_days", 
+      label: "Total Leave Days", 
+      sortable: true, 
+      searchable: true,
+      render: (row: any) => formatNumber(row.total_leave_days)
+    },
+  ]
+
+  const renderFormField = (field: any, state: any, dispatch: any) => {
     const value = state[field.name] || ""
 
     if (field.type === "date") {
       return (
         <CustomDateInputField
-          label={field.label}
-          value={value}
-          onChange={(newValue) => dispatch({ type: "SET_FIELD", field: field.name, value: newValue })}
+          input_label={field.label}
+          input_value={value}
+          onchange={(e: any) => dispatch({ type: "SET_FIELD", field: field.name, value: e.target.value })}
           required={field.required}
         />
       )
@@ -296,10 +625,10 @@ export default function LeaveRequestPage() {
         input_name={field.name}
         input_value={value}
         onchange={(e) => dispatch({ type: "SET_FIELD", field: field.name, value: e.target.value })}
-        placeholder={field.placeholder}
+        placeHolder={field.placeholder}
         required={field.required}
-        multiline={field.type === "textarea"}
-        rows={field.rows}
+        isMultiLine={field.type === "textarea"}
+        maxRows={field.rows}
         startIcon={field.startIcon}
       />
     )
@@ -311,13 +640,18 @@ export default function LeaveRequestPage() {
           <h1 className="text-2xl font-semibold text-gray-800">Leave Request</h1>
           <div className="flex gap-2">
             <button
-              onClick={() => window.location.reload()}
+              onClick={fetchAll}
               className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
               Refresh
             </button>
             <button
-              onClick={() => setIsLeaveRequestModalOpen(true)}
+              onClick={() => {
+                setIsEditMode(false)
+                setEditingRecordId(null)
+                leaveRequestDispatch({ type: "RESET_FORM" })
+                setIsLeaveRequestModalOpen(true)
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={20} />
@@ -331,7 +665,7 @@ export default function LeaveRequestPage() {
             <div className="text-gray-600">Loading leave requests...</div>
           </div>
         ) : (
-          <DataTable columns={columns} data={leaveRequests} loading={loading} onEdit={() => {}} onDelete={() => {}} />
+          <DataTable columns={columns} data={leaveRequests} />
         )}
 
       {/* Leave Request Modal */}
@@ -339,10 +673,12 @@ export default function LeaveRequestPage() {
         open={isLeaveRequestModalOpen}
         onClose={() => {
           setIsLeaveRequestModalOpen(false)
+          setIsEditMode(false)
+          setEditingRecordId(null)
           leaveRequestDispatch({ type: "RESET_FORM" })
         }}
         multiple_btn={true}
-        title="Leave Request"
+        title={isEditMode ? "Edit Leave Request" : "Leave Request"}
         description={false}
         maxWidth="lg"
         onSave={() => handleLeaveRequestSubmit()}
@@ -354,9 +690,9 @@ export default function LeaveRequestPage() {
               <Typography sx={{ fontWeight: 600, fontSize: "12px" }}>Basic Information</Typography>
             </AccordionSummary>
             <AccordionDetails sx={{ backgroundColor: "#f5f5f5" }}>
-              <Grid container spacing={2}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Request No */}
-                <Grid item xs={12} md={6}>
+                <div>
                   <CustomTextField
                     input_label="Request No"
                     input_name="request_no"
@@ -365,10 +701,10 @@ export default function LeaveRequestPage() {
                       leaveRequestDispatch({ type: "SET_FIELD", field: "request_no", value: e.target.value })
                     }
                   />
-                </Grid>
+                </div>
 
                 {/* Request Date */}
-                <Grid item xs={12} md={6}>
+                <div>
                   <CustomDateInputField
                     input_label="Request Date"
                     input_value={leaveRequestState.request_date}
@@ -376,36 +712,70 @@ export default function LeaveRequestPage() {
                       leaveRequestDispatch({ type: "SET_FIELD", field: "request_date", value: e.target.value })
                     }
                   />
-                </Grid>
+                </div>
 
-                {/* Employee */}
-                <Grid item xs={12} md={6}>
-                  <CustomSelectField
-                    label="Employee"
-                    value={leaveRequestState.employee}
-                    options={employeeOptions}
-                    onChange={(e) =>
-                      leaveRequestDispatch({ type: "SET_FIELD", field: "employee", value: e.target.value })
-                    }
-                    required
-                  />
-                </Grid>
+                 {/* Employee */}
+                 <div>
+                   <CustomSelectField
+                     label="Employee"
+                     value={leaveRequestState.employee}
+                     options={employeeOptions}
+                     onChange={(e) =>
+                       leaveRequestDispatch({ type: "SET_FIELD", field: "employee", value: e.target.value })
+                     }
+                     required
+                   />
+                   {loadingEmployees && (
+                     <div className="text-xs text-gray-500 mt-1">Loading employees...</div>
+                   )}
+                   {!loadingEmployees && employeeOptions.length === 0 && (
+                     <div className="text-xs text-red-500 mt-1">Failed to load employees</div>
+                   )}
+                 </div>
 
-                {/* Reason */}
-                <Grid item xs={12} md={12}>
-                  <CustomTextField
-                    input_label="Reason"
-                    input_name="reason"
-                    input_value={leaveRequestState.reason}
-                    onchange={(e) =>
-                      leaveRequestDispatch({ type: "SET_FIELD", field: "reason", value: e.target.value })
-                    }
-                    multiline
-                    rows={3}
-                    required
-                  />
-                </Grid>
-              </Grid>
+                 {/* Company */}
+                 <div>
+                   <CustomSelectField
+                     label="Company"
+                     value={leaveRequestState.company}
+                     options={companyOptions}
+                     onChange={(e) =>
+                       leaveRequestDispatch({ type: "SET_FIELD", field: "company", value: e.target.value })
+                     }
+                     required
+                   />
+                 </div>
+
+                 {/* Reason */}
+                 <div className="md:col-span-2">
+                   <CustomTextField
+                     input_label="Reason"
+                     input_name="reason"
+                     input_value={leaveRequestState.reason}
+                     onchange={(e) =>
+                       leaveRequestDispatch({ type: "SET_FIELD", field: "reason", value: e.target.value })
+                     }
+                     isMultiLine
+                     maxRows={3}
+                     required
+                   />
+                 </div>
+
+                 {/* Description (API field) */}
+                 <div className="md:col-span-2">
+                   <CustomTextField
+                     input_label="Description"
+                     input_name="description"
+                     input_value={leaveRequestState.description}
+                     onchange={(e) =>
+                       leaveRequestDispatch({ type: "SET_FIELD", field: "description", value: e.target.value })
+                     }
+                     isMultiLine
+                     maxRows={3}
+                     required
+                   />
+                 </div>
+              </div>
             </AccordionDetails>
           </Accordion>
 
@@ -418,8 +788,8 @@ export default function LeaveRequestPage() {
           {/* Tab Panels */}
           {activeTab === 0 && (
             <div style={{ padding: "16px" }}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                   <CustomSelectField
                     label="Leave Unit"
                     value={leaveRequestState.leave_unit}
@@ -429,21 +799,27 @@ export default function LeaveRequestPage() {
                     }
                     required
                   />
-                </Grid>
+                </div>
 
-                <Grid item xs={12} md={6}>
-                  <CustomSelectField
-                    label="Leave Type"
-                    value={leaveRequestState.leave_type}
-                    options={leaveTypeOptions}
-                    onChange={(e) =>
-                      leaveRequestDispatch({ type: "SET_FIELD", field: "leave_type", value: e.target.value })
-                    }
-                    required
-                  />
-                </Grid>
+                 <div>
+                   <CustomSelectField
+                     label="Leave Type"
+                     value={leaveRequestState.leave_type}
+                     options={leaveTypeOptions}
+                     onChange={(e) =>
+                       leaveRequestDispatch({ type: "SET_FIELD", field: "leave_type", value: e.target.value })
+                     }
+                     required
+                   />
+                   {loadingLeaveTypes && (
+                     <div className="text-xs text-gray-500 mt-1">Loading leave types...</div>
+                   )}
+                   {!loadingLeaveTypes && leaveTypeOptions.length === 0 && (
+                     <div className="text-xs text-red-500 mt-1">Failed to load leave types</div>
+                   )}
+                 </div>
 
-                <Grid item xs={12} md={6}>
+                <div>
                   <CustomDateInputField
                     input_label="From Date"
                     input_value={leaveRequestState.from_date}
@@ -452,20 +828,22 @@ export default function LeaveRequestPage() {
                     }
                     required
                   />
-                </Grid>
+                </div>
 
-                <Grid item xs={12} md={6}>
-                  <CustomDateInputField
-                    input_label="Till Date"
-                    input_value={leaveRequestState.till_date}
-                    onchange={(e) =>
-                      leaveRequestDispatch({ type: "SET_FIELD", field: "till_date", value: e.target.value })
-                    }
-                    required
-                  />
-                </Grid>
+                 <div>
+                   <CustomDateInputField
+                     input_label="Till Date"
+                     input_value={leaveRequestState.till_date}
+                     onchange={(e) => {
+                       const value = e.target.value
+                       leaveRequestDispatch({ type: "SET_FIELD", field: "till_date", value })
+                       leaveRequestDispatch({ type: "SET_FIELD", field: "to_date", value })
+                     }}
+                     required
+                   />
+                 </div>
 
-                <Grid item xs={12} md={6}>
+                <div>
                   <CustomTextField
                     input_label="Leave Days"
                     input_name="leave_days"
@@ -474,9 +852,9 @@ export default function LeaveRequestPage() {
                       leaveRequestDispatch({ type: "SET_FIELD", field: "leave_days", value: e.target.value })
                     }
                   />
-                </Grid>
+                </div>
 
-                <Grid item xs={12} md={6}>
+                <div>
                   <FormControlLabel
                     control={
                       <Checkbox
@@ -488,8 +866,8 @@ export default function LeaveRequestPage() {
                     }
                     label="Un Paid"
                   />
-                </Grid>
-              </Grid>
+                </div>
+              </div>
             </div>
           )}
 
@@ -512,7 +890,7 @@ export default function LeaveRequestPage() {
               </div>
 
               {/* Table Placeholder */}
-              <DataTable columns={attachmentColumns} data={leaveRequestState.attachments || []} style={{ width: "100%" }} />
+              <DataTable columns={attachmentColumns} data={leaveRequestState.attachments || []} />
             </div>
           )}
                   <StatusFooter status={leaveRequestState.status} />
@@ -543,9 +921,9 @@ export default function LeaveRequestPage() {
           attachmentDispatch({ type: "RESET_FORM" })
         }}
       >
-        <Grid container spacing={2}>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Left column: all fields */}
-          <Grid item xs={12} md={8}>
+          <div className="md:col-span-2">
             <div>
               <CustomTextField
                 input_label="Attachment No"
@@ -619,18 +997,18 @@ export default function LeaveRequestPage() {
               </div>
               <p className="text-xs text-gray-500">Max size: 15MB</p>
             </div>
-          </Grid>
+          </div>
 
           {/* Right column: storage info */}
-          <Grid item xs={12} md={4}>
+          <div>
             <div className="p-3 border rounded-lg bg-gray-50 h-full">
               <h4 className="font-medium mb-2">Storage (% full)</h4>
               <p className="mb-1">Usage: 0 GB (0 MB)</p>
               <p className="mb-1">Free: 15 GB (15,360 MB)</p>
               <p className="mb-1">Limit: 15 GB (15,360 MB)</p>
             </div>
-          </Grid>
-        </Grid>
+          </div>
+        </div>
   
         <StatusFooter status={leaveRequestState.status} />
 

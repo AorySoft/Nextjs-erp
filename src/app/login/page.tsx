@@ -1,13 +1,12 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { Eye, EyeOff, User, Lock } from "lucide-react";
-import axios from "axios";
 import { useSearchParams } from "next/navigation";
-import { saveSession } from "@/lib/auth";
+import { saveSession, loginUser } from "@/lib/auth";
 import { toast } from "react-toastify";
 import Image from "next/image";
 import backImg from "./Benckmark-logo.png";
-const LoginPage = () => {
+const LoginForm = () => {
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -80,17 +79,14 @@ const LoginPage = () => {
     setError("");
 
     try {
-      const response = await axios.post("/api/auth/login", {
-        usr: formData.username,
-        pwd: formData.password,
-      });
+      const result = await loginUser(formData.username, formData.password);
 
-      if (response.data.message === "Logged In") {
+      if (result.success && result.data) {
         // Handle successful login
-        console.log("Login successful:", response.data);
+        console.log("Login successful:", result.data);
 
         // Save session based on remember me preference
-        saveSession(response.data, formData.rememberMe);
+        saveSession(result.data, formData.rememberMe);
 
         // Show success toast and message
         toast.success("Login successful, redirecting...", {
@@ -106,25 +102,14 @@ const LoginPage = () => {
           window.location.replace("/entity-selection");
         }, 1500);
       } else {
-        setError("Invalid credentials. Please try again.");
+        const errorMessage = result.error || "Invalid credentials. Please try again.";
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (error: unknown) {
       console.error("Login error:", error);
-      if (axios.isAxiosError(error)) {
-        if (error.response?.status === 401) {
-          toast.error("Invalid username or password");
-          setError("Invalid username or password");
-        } else if (error.code === "ERR_NETWORK") {
-          toast.error("Server is unavailable. Please try again later.");
-          setError("Server is unavailable. Please try again later.");
-        } else {
-          toast.error("Login failed. Please try again later.");
-          setError("Login failed. Please try again later.");
-        }
-      } else {
-        toast.error("Login failed. Please try again later.");
-        setError("Login failed. Please try again later.");
-      }
+      toast.error("Login failed. Please try again later.");
+      setError("Login failed. Please try again later.");
     } finally {
       // Only set loading to false if we're not showing success message
       if (!document.querySelector(".bg-green-50")) {
@@ -312,6 +297,21 @@ const LoginPage = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const LoginPage = () => {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 };
 

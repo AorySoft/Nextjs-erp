@@ -49,6 +49,9 @@ const LeaveAdjustment = () => {
   const [loading, setLoading] = useState(false)
 
   const [state, setState] = useReducer((state: any, newState: any) => ({ ...state, ...newState }), {
+    // Edit mode state
+    isEditMode: false,
+    editingRecordId: null,
     // Form fields for Leave Adjustment
     formFields: [
       {
@@ -239,7 +242,7 @@ const LeaveAdjustment = () => {
 
   const fetchAll = async () => {
     try {
-      const res: any = await apiClient.get('resource/Leave Adjustment?fields=["name","date","adjustment_type","payroll_period","employee"]');
+      const res: any = await apiClient.get('resource/Leave Adjustment?fields=["name","date","adjustment_type","payroll_period","employee","department","designation","leave_type","leave_balance","adjustment","new_balance","reason"]');
 
       // Using mock data for nowl
       console.log(res,"reds")
@@ -267,7 +270,10 @@ const LeaveAdjustment = () => {
             // Handle delete if needed
             setState({ selected_data: row, delete_dialog: true })   
           }} />
-          <Edit size={16} color={defaultColor?.main_blue} />
+          <Edit size={16} color={defaultColor?.main_blue} style={{ cursor: "pointer" }} onClick={(e) => {
+            e.stopPropagation();
+            handleEditRecord(row);
+          }} />
           <SquareUserRound size={16} color={defaultColor?.main_blue} />
         </div>
       ),
@@ -423,6 +429,88 @@ const LeaveAdjustment = () => {
       console.error("Error creating leave adjustment:", error)
     }
   }
+
+  const handleUpdateLeaveAdjustment = async () => {
+    try {
+      if (!state.adjustment_type) {
+        toast.error("Please select adjustment type")
+        return
+      }
+      if (!state.employee) {
+        toast.error("Please select employee")
+        return
+      }
+      if (!state.leave_type) {
+        toast.error("Please select leave type")
+        return
+      }
+      if (!state.remarks) {
+        toast.error("Please enter remarks")
+        return
+      }
+
+      const send_object = {
+        transaction_date: state.transaction_date,
+        adjustment_type: state.adjustment_type,
+        employee: state.employee,
+        department: state.department,
+        designation: state.designation,
+        leave_type: state.leave_type,
+        leave_balance: state.leave_balance,
+        adjustment: state.adjustment,
+        new_balance: (Number(state.leave_balance) + Number(state.adjustment)),
+        reason: state.remarks,
+      }
+
+      console.log("update_object", send_object)
+      console.log("editingRecordId", state.editingRecordId)
+
+      const response = await apiClient.patch(`/resource/Leave Adjustment/${state.editingRecordId}`, send_object);
+      console.log("update response", response)
+      console.log("Leave Adjustment updated successfully")
+      toast.success("Leave Adjustment updated successfully")
+      
+      setState({ 
+        leave_adjustment_dialog: false,
+        isEditMode: false,
+        editingRecordId: null
+      })
+      fetchAll()
+    } catch (error) {
+      console.error("Error updating leave adjustment:", error)
+      toast.error("Failed to update leave adjustment")
+    }
+  }
+
+  const handleEditRecord = async (record: any) => {
+    try {
+      console.log("Editing record:", record)
+      
+      // Fetch complete record details for editing
+      const fullRecord: any = await apiClient.get(`resource/Leave Adjustment/${record.name}`);
+      console.log("Full record details:", fullRecord.data)
+      
+      setState({
+        isEditMode: true,
+        editingRecordId: record.name, // Using the unique field 'name' like delete API
+        leave_adjustment_dialog: true,
+        // Populate form with existing data - mapping API field names to form field names
+        transaction_date: fullRecord.data.date || new Date().toISOString().split("T")[0],
+        adjustment_type: fullRecord.data.adjustment_type || "",
+        employee: fullRecord.data.employee || "",
+        department: fullRecord.data.department || "",
+        designation: fullRecord.data.designation || "",
+        leave_type: fullRecord.data.leave_type || "",
+        leave_balance: fullRecord.data.leave_balance || "",
+        adjustment: fullRecord.data.adjustment || "",
+        new_balance: fullRecord.data.new_balance || "",
+        remarks: fullRecord.data.reason || "",
+      })
+    } catch (error) {
+      console.error("Error fetching record details:", error)
+      toast.error("Failed to load record details for editing")
+    }
+  }
   // delete row data 
     const DeleteRowData = async(row:any,index?:number) => {
       try {
@@ -453,7 +541,22 @@ const LeaveAdjustment = () => {
             </button>
             <button
               onClick={() => {
-                setState({ leave_adjustment_dialog: true })
+                setState({ 
+                  leave_adjustment_dialog: true,
+                  isEditMode: false,
+                  editingRecordId: null,
+                  // Reset form fields
+                  transaction_date: new Date().toISOString().split("T")[0],
+                  adjustment_type: "",
+                  employee: "",
+                  department: "",
+                  designation: "",
+                  leave_type: "",
+                  leave_balance: "",
+                  adjustment: "",
+                  new_balance: "",
+                  remarks: "",
+                })
               }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
@@ -473,13 +576,17 @@ const LeaveAdjustment = () => {
       <MuiDialog
         open={state?.leave_adjustment_dialog}
         onClose={() => {
-          setState({ leave_adjustment_dialog: false })
+          setState({ 
+            leave_adjustment_dialog: false,
+            isEditMode: false,
+            editingRecordId: null
+          })
         }}
         multiple_btn={true}
-        title="Leave Adjustment"
+        title={state.isEditMode ? "Edit Leave Adjustment" : "Leave Adjustment"}
         description={false}
         maxWidth="lg"
-        onSave={() => handleCreateLeaveAdjustment()}
+        onSave={() => state.isEditMode ? handleUpdateLeaveAdjustment() : handleCreateLeaveAdjustment()}
         onPrint={() => console.log(state, "s")}
       >
         <div id="leave_adjustment-parent">

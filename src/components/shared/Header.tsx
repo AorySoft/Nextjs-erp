@@ -12,7 +12,7 @@ import {
   faSignOutAlt
 } from '@fortawesome/free-solid-svg-icons';
 import Button from '../ui/Button';
-import { clearSession } from '@/lib/auth';
+import { logout } from '@/lib/auth';
 
 interface HeaderProps {
   title?: string;
@@ -37,8 +37,10 @@ export default function Header({
         
         if (selectedEntity) {
           const entity = JSON.parse(selectedEntity);
-          if (entity.name) {
-            setSelectedEntityName(entity.name);
+          if (entity.branch) {
+            setSelectedEntityName(entity.branch); // Use branch field as display name
+          } else if (entity.name) {
+            setSelectedEntityName(entity.name); // Fallback to name if branch not available
           } else {
             // Fallback to default title if entity exists but no name
             setSelectedEntityName(title);
@@ -71,9 +73,8 @@ export default function Header({
     hour12: true 
   });
 
-  const handleLogout = () => {
-    clearSession();
-    window.location.href = '/login';
+  const handleLogout = async () => {
+    await logout();
   };
 
   return (

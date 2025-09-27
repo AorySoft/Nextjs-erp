@@ -4,7 +4,7 @@ import axios from 'axios';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://erp.thebenchmark.com.pk/api';
 const API_TOKEN = process.env.NEXT_PUBLIC_ERP_TOKEN;
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     console.log('API Route: Fetching holiday lists...');
     

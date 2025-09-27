@@ -6,7 +6,7 @@ const API_TOKEN = process.env.NEXT_PUBLIC_ERP_TOKEN;
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { name: string } }
+  { params }: { params: Promise<{ name: string }> }
 ) {
   try {
     console.log('API Route: Fetching holiday list details...');
@@ -18,7 +18,7 @@ export async function GET(
       );
     }
 
-    const { name } = params;
+    const { name } = await params;
     
     if (!name) {
       return NextResponse.json(
