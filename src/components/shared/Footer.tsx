@@ -31,7 +31,7 @@ export default function Footer({ className = "" }: FooterProps) {
         <FontAwesomeIcon icon={faWifi} />
         <div className="flex items-center gap-1 text-[#0a74da] font-semibold">
           <FontAwesomeIcon icon={faBuilding} className="text-sm" />
-          <span>EDAP</span>
+          <span>BMS</span>
         </div>
       </div>
 

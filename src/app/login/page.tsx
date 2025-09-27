@@ -153,7 +153,7 @@ const LoginForm = () => {
             </div> */}
             <h1 className="text-2xl font-bold text-[#2878aa] mb-2">WELCOME</h1>
             <p className="text-gray-600 text-[11px] leading-relaxed">
-              Please Enter your Id and password to login into Edap Panel to view
+              Please Enter your Id and password to login into BMS Panel to view
               all the Entity statistics
             </p>
           </div>
