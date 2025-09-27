@@ -28,6 +28,10 @@ const request = {
     const res = await apiClient.get<T>(url, { params, ...config });
     return res.data;
   },
+  getByBody: async <T>(url: string, data?: any, config?: AxiosRequestConfig) => {
+    const res = await apiClient.post<T>(url, data, config);
+    return res.data;
+  },
 
   post: async <T>(url: string, data?: any, config?: AxiosRequestConfig) => {
     const res = await apiClient.post<T>(url, data, config);
