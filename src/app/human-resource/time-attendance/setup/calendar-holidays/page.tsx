@@ -54,12 +54,21 @@ const CalendarHolidayPage = () => {
     holiday_periods: [],
     formFields: [
       {
+        input_name: "holiday_name",
+        input_label: "Name",
+        placeholder: "Enter Holiday Name",
+        type: "text",
+        required: true,
+        grid_size: 6,
+        isDisable: false,
+      },
+      {
         input_name: "calendar_holiday",
         input_label: "Holiday List Name",
         placeholder: "Enter Holiday List Name",
         type: "text",
         required: true,
-        grid_size: 12,
+        grid_size: 6,
         isDisable: false,
       },
       {
@@ -67,7 +76,7 @@ const CalendarHolidayPage = () => {
         input_label: "Apply On",
         placeholder: "Select Apply On",
         type: "select",
-        required: true,
+        required: false,
         grid_size: 6,
         options: [
           { label: "Department", value: "Department" },
@@ -89,6 +98,7 @@ const CalendarHolidayPage = () => {
       },
     ],
     
+    holiday_name: "",
     calendar_holiday: "",
     payroll_period: "",
     apply_on: "",
@@ -313,6 +323,7 @@ const CalendarHolidayPage = () => {
   const handleEdit = async (holiday: CalendarHoliday) => {
     setSelectedHoliday(holiday)
     setState({
+      holiday_name: holiday.name || "",
       calendar_holiday: holiday.holiday_list_name || "",
       payroll_period: holiday.custom_payroll_period || "",
       apply_on: holiday.custom_apply_on || "",
@@ -535,6 +546,7 @@ const CalendarHolidayPage = () => {
 
   const columns = [
     {
+      
       key: "action",
       label: "Action",
       searchable: false,
@@ -543,8 +555,8 @@ const CalendarHolidayPage = () => {
         return (
         <div className="flex gap-2">
             <Trash size={16} color={defaultColor?.main_blue} onClick={() => handleDeleteClick(holiday)} />
-            <Edit size={16} color={defaultColor?.main_blue} onClick={() => handleRenameClick(holiday)} />
-            <SquareUserRound size={16} color={defaultColor?.main_blue} onClick={() => handleEdit(holiday)} />
+            <Edit size={16} color={defaultColor?.main_blue} onClick={() =>  handleEdit(holiday) } />
+            <SquareUserRound size={16} color={defaultColor?.main_blue} onClick={() =>{}} />
         </div>
         )
       },
@@ -586,6 +598,30 @@ const CalendarHolidayPage = () => {
       let result: { success?: boolean; data?: any; error?: string }
 
       if (selectedHoliday) {
+        // Check if the name has changed and handle rename if needed
+        if (state.holiday_name.trim() !== selectedHoliday.name?.trim()) {
+          // First rename the holiday list
+          const renameResponse = await fetch('/api/holiday-lists', {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              old_name: selectedHoliday.name,
+              new_name: state.holiday_name
+            })
+          })
+          
+          const renameResult = await renameResponse.json()
+          
+          if (!renameResponse.ok) {
+            throw new Error(renameResult.error || 'Failed to rename holiday list')
+          }
+          
+          // Update the selectedHoliday name for the subsequent update call
+          selectedHoliday.name = state.holiday_name
+        }
+
         // Update existing holiday list
         response = await fetch(`/api/holiday-lists?name=${encodeURIComponent(selectedHoliday.name)}`, {
           method: 'PUT',
@@ -601,7 +637,7 @@ const CalendarHolidayPage = () => {
         }
         
         setCalendarHolidays((prev) =>
-          prev.map((item) => (item.name === selectedHoliday.name ? { ...item, ...send_object } : item)),
+          prev.map((item) => (item.name === selectedHoliday.name ? { ...item, ...send_object, name: state.holiday_name } : item)),
         )
         toast.success("Calendar holiday updated successfully")
         

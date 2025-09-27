@@ -38,6 +38,7 @@ interface CustomInputFieldProps {
   customSx?: Record<string, unknown>;
   error?: boolean;
   placeholder?: string;
+  maxRows?: number;
 }
 
 export default function CustomInputField(props: CustomInputFieldProps) {
@@ -59,6 +60,7 @@ export default function CustomInputField(props: CustomInputFieldProps) {
     onKeyDown,
     Onfocus,
     customSx,
+    maxRows,
   } = props;
   // const { sx: customSx, ...rest } = props;
 
@@ -151,6 +153,7 @@ export default function CustomInputField(props: CustomInputFieldProps) {
             <InputAdornment position="end">{endIicon ?? ""}</InputAdornment>
           ),
         }}
+        maxRows={maxRows}  
       />
     </form>
   );
@@ -172,7 +175,8 @@ CustomInputField.defaultProps = {
   isMultiLine: false,
   readonly: false,
   isDisable: false,
-  required:false
+  required:false,
+  maxRows:1
 };
 
 CustomInputField.propTypes = {
@@ -193,4 +197,5 @@ CustomInputField.propTypes = {
   Onfocus: PropTypes.any,
   required: PropTypes.any,
   customSx:PropTypes.any,
+  maxRows: PropTypes.number,
 };
