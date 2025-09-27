@@ -213,5 +213,114 @@ getEmploymentType: async () => {
   }
 };
 
+// Test API connectivity
+export const testAPI = {
+  testConnection: async () => {
+    try {
+      // Test with a basic endpoint that should be accessible
+      const response = await apiClient.get('/method/frappe.auth.get_logged_user');
+      console.log('API Test - Logged User:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('API Test - Connection failed:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('API Test - Error details:', {
+          status: error?.response?.status,
+          data: error?.response?.data,
+          url: error?.config?.url,
+        });
+      }
+      throw error;
+    }
+  },
+
+  testUserPermissions: async () => {
+    try {
+      // Test with User doctype which should be accessible
+      const response = await apiClient.get('/resource/User?fields=["name","full_name","email"]&limit=1');
+      console.log('API Test - User access:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('API Test - User access failed:', error);
+      throw error;
+    }
+  }
+};
+
+// Holiday List API
+export const holidayListAPI = {
+  getHolidayLists: async () => {
+    try {
+      const response = await apiClient.get(`${process.env.NEXT_PUBLIC_API_URL}/resource/Holiday List?fields=["name","holiday_list_name","custom_payroll_period","custom_apply_on"]`);
+      console.log('Holiday Lists', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Frontend API: Error fetching holiday lists:', error);
+      if (axios.isAxiosError(error)) {
+        console.error('Frontend API: Axios error details:', {
+          status: error?.response?.status,
+          data: error?.response?.data,
+          url: error?.config?.url,
+          baseURL: error?.config?.baseURL
+        });
+        
+        // Handle specific permission errors
+        if (error?.response?.status === 403 || error?.response?.data?.exception === 'frappe.exceptions.PermissionError') {
+          throw new Error('Permission Error: Your API token does not have access to Holiday List. Please check your ERPNext user permissions.');
+        }
+        
+        const errorMessage = error?.response?.data?._error_message || error?.response?.data?.error || error?.response?.data?.details || error?.message;
+        throw new Error(`API Error: ${errorMessage}`);
+      }
+      throw error;
+    }
+  },
+
+  createHolidayList: async (holidayData: any) => {
+    try {
+      const response = await apiClient.post('/resource/Holiday List', holidayData);
+      console.log('Holiday List Created', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Frontend API: Error creating holiday list:', error);
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error?.response?.data?.error || error?.response?.data?.details || error?.message;
+        throw new Error(`API Error: ${errorMessage}`);
+      }
+      throw error;
+    }
+  },
+
+  updateHolidayList: async (name: string, holidayData: any) => {
+    try {
+      const response = await apiClient.put(`/resource/Holiday List/${name}`, holidayData);
+      console.log('Holiday List Updated', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Frontend API: Error updating holiday list:', error);
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error?.response?.data?.error || error?.response?.data?.details || error?.message;
+        throw new Error(`API Error: ${errorMessage}`);
+      }
+      throw error;
+    }
+  },
+
+  deleteHolidayList: async (name: string) => {
+    try {
+      const response = await apiClient.delete(`/resource/Holiday List/${name}`);
+      console.log('Holiday List Deleted', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Frontend API: Error deleting holiday list:', error);
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error?.response?.data?.error || error?.response?.data?.details || error?.message;
+        throw new Error(`API Error: ${errorMessage}`);
+      }
+      throw error;
+    }
+  }
+};
+
 
 
