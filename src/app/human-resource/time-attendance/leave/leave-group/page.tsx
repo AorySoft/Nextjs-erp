@@ -176,7 +176,7 @@ const LeaveGroup = () => {
       const send_object = {
         code: state.code,
         leave_group: state.leave_group,
-        leave_adjustment_policy: sstate.leave_adjustment_policy,
+        leave_adjustment_policy: state.leave_adjustment_policy,
       };
 
       console.log("Creating leave group:", send_object);
