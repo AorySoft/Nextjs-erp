@@ -1,0 +1,12 @@
+stages:
+  - deploy
+
+deploy_to_dokploy:
+  stage: deploy
+  image: curlimages/curl:latest
+  script:
+    - curl -X POST "https://dokploy.thebenchmark.com.pk/api/deploy/HIPCgI8N0Lus4PBUsoFUr"
+  only:
+    - dev
+    - main
+  when: manual
