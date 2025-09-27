@@ -48,27 +48,50 @@ export default function LeaveQuotaAllocationPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
 
-  const columns = [
+  const columns: any[] = [
     {
-      key: "actions",
+      key: "action",
       label: "Actions",
+      searchable: false,
       render: (row: any) => (
         <div className="flex gap-2">
-          <button className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded">
-            <Edit size={16} />
-          </button>
-          <button className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded">
-            <Trash size={16} />
-          </button>
+          <Trash 
+            size={16} 
+            color={defaultColor?.main_blue} 
+            className="cursor-pointer hover:opacity-70" 
+            onClick={(e) => {
+              e.stopPropagation();
+              deleteLeaveQuotaAllocation(row.name);
+            }}
+          />
+          <Edit 
+            size={16} 
+            color={defaultColor?.main_blue} 
+            className="cursor-pointer hover:opacity-70" 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(row);
+            }}
+          />
+          <View 
+            size={16} 
+            color={defaultColor?.main_blue} 
+            className="cursor-pointer hover:opacity-70" 
+            onClick={(e) => {
+              e.stopPropagation();
+              // Handle view
+            }}
+          />
         </div>
       ),
     },
-    { key: "sno", label: "S.No" },
-    { key: "transaction_no", label: "Transaction No" },
-    { key: "transaction_date", label: "Transaction Date" },
-    { key: "transaction_type", label: "Transaction Type" },
-    { key: "payroll_period", label: "Payroll Period" },
-  ]
+    { key: "id", label: "S.No", searchable: false },
+    { key: "name", label: "Name", searchable: true },
+    { key: "leave_type", label: "Leave Type", searchable: true },
+    { key: "transaction_type", label: "Transaction Type", searchable: true },
+    { key: "transaction_sub_type", label: "Transaction Sub Type", searchable: true },
+    { key: "payroll_period", label: "Payroll Period", searchable: true },
+  ];
 
   const renderStepContent = (step: number) => {
     // Skip Allocation step if Transaction Sub Type is "Opening Quota"

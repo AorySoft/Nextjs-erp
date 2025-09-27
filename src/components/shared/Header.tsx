@@ -27,6 +27,7 @@ export default function Header({
 }: HeaderProps) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedEntityName, setSelectedEntityName] = useState(title);
+  const [currentTime, setCurrentTime] = useState(new Date());
   
   // Get selected entity from storage
   useEffect(() => {
@@ -58,15 +59,23 @@ export default function Header({
 
     getSelectedEntity();
   }, [title]);
+
+  // Update time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
   
   // Get current date and time
-  const now = new Date();
-  const dateStr = now.toLocaleDateString('en-US', { 
+  const dateStr = currentTime.toLocaleDateString('en-US', { 
     month: 'short', 
     day: '2-digit', 
     year: 'numeric' 
   });
-  const timeStr = now.toLocaleTimeString('en-US', { 
+  const timeStr = currentTime.toLocaleTimeString('en-US', { 
     hour: 'numeric', 
     minute: '2-digit', 
     second: '2-digit',
