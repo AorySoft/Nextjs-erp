@@ -15,10 +15,10 @@ import CustomTextField from "@/components/ui/CustomTextField";
 import { defaultColor } from "@/utils/constant";
 import CustomSelectField from "@/components/ui/CustomSelectField";
 import { toast } from "react-toastify";
+import apiClient from "@/services/apiClient";
 
 interface TableLeaveGroup {
-  id: string;
-  code: string;
+  name: string;
   leave_group: string;
   leave_adjustment_policy: string;
 }
@@ -41,16 +41,6 @@ const LeaveGroup = () => {
       // Basic Information fields
       formFields: [
         {
-          input_name: "code",
-          input_label: "Code",
-          placeholder: "Enter Code",
-          type: "text",
-          required: true,
-          startIcon: <></>,
-          grid_size: 6,
-          isDisable: false,
-        },
-        {
           input_name: "leave_group",
           input_label: "Leave Group",
           placeholder: "Enter Leave Group",
@@ -63,12 +53,13 @@ const LeaveGroup = () => {
         {
           input_name: "leave_adjustment_policy",
           input_label: "Leave Adjustment Policy",
-          placeholder: "Search Leave Adjustment Policy",
-          type: "text",
+          placeholder: "Select Leave Adjustment Policy",
+          type: "select",
           required: true,
-          startIcon: <Search size={16} />,   // <-- search icon
+          startIcon: <></>,
           grid_size: 6,
           isDisable: false,
+          options: [],
         },
       ],
       
@@ -77,8 +68,8 @@ const LeaveGroup = () => {
         {
           id: "1",
           leave_type: "",
-          renew_on: "",
-          leave_unit: "",
+          renew_on: "Every Calendar Days",
+          leave_unit: "Days",
           leave_days: 0,
         }
       ],
@@ -86,54 +77,98 @@ const LeaveGroup = () => {
       leave_group_dialog: false,
       
       // Available options
-      leave_types_options: [
-        { value: "annual", label: "Annual Leave" },
-        { value: "sick", label: "Sick Leave" },
-        { value: "casual", label: "Casual Leave" },
-        { value: "maternity", label: "Maternity Leave" },
-      ],
+      leave_types_options: [],
+      leave_adjustment_policy_options: [],
       
-      renew_on_options: [
-        { value: "yearly", label: "Yearly" },
-        { value: "monthly", label: "Monthly" },
-        { value: "quarterly", label: "Quarterly" },
-      ],
+      // Selected rows for submission
+      selectedRows: [],
       
-      leave_unit_options: [
-        { value: "days", label: "Days" },
-        { value: "hours", label: "Hours" },
-      ],
+      // Edit state
+      editingLeaveGroup: null,
+      isEditMode: false,
     }
   );
 
   const fetchLeaveGroups = async () => {
     try {
       setLoading(true);
-      // Mock data for now
-      const mockData: TableLeaveGroup[] = [
-        {
-          id: "1",
-          code: "01",
-          leave_group: "Annual Leaves (15 Days)",
-          leave_adjustment_policy: "Absent Adjust Policy(15Days)",
-        },
-        {
-          id: "2", 
-          code: "02",
-          leave_group: "Annual Leaves (6 Days)",
-          leave_adjustment_policy: "Absent Adjust Policy(6Days)",
-        },
-      ];
-      setLeaveGroups(mockData);
+      const response: any = await apiClient.get(
+        '/resource/Leave Group?fields=["name","leave_group","leave_adjustment_policy"]'
+      );
+      
+      if (response && Array.isArray(response.data)) {
+        const transformedLeaveGroups = response.data.map((item: any) => ({
+          name: item.name || "",
+          leave_group: item.leave_group || "",
+          leave_adjustment_policy: item.leave_adjustment_policy || "",
+        }));
+        setLeaveGroups(transformedLeaveGroups);
+      }
     } catch (error) {
       console.error("Error fetching leave groups:", error);
+      toast.error("Error fetching leave groups");
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchLeaveTypes = async () => {
+    try {
+      const response: any = await apiClient.get(
+        '/resource/Leave Type?limit=100&fields=["name","leave_type_name"]'
+      );
+      
+      if (response && Array.isArray(response.data)) {
+        const leaveTypes = response.data.map((item: any) => ({
+          value: item.name,
+          label: item.leave_type_name || item.name,
+        }));
+        setState({ leave_types_options: leaveTypes });
+      }
+    } catch (error) {
+      console.error("Error fetching leave types:", error);
+    }
+  };
+
+  const fetchLeaveAdjustmentPolicies = async () => {
+    try {
+      const response: any = await apiClient.get(
+        '/resource/Leave Adjustment Policy?fields=["name","adjustment_type","adjustment_policy","doctype_item"]'
+      );
+      
+      if (response && Array.isArray(response.data)) {
+        const policies = response.data.map((item: any) => ({
+          value: item.name,
+          label: item.adjustment_policy || item.name,
+        }));
+        
+        // Update the separate state variable for leave adjustment policy options
+        setState({ leave_adjustment_policy_options: policies });
+        
+        // Update the form field options for leave_adjustment_policy
+        setState((prevState: any) => ({
+          ...prevState,
+          formFields: prevState.formFields.map((field: any) => 
+            field.input_name === "leave_adjustment_policy" 
+              ? { ...field, options: policies }
+              : field
+          )
+        }));
+      }
+    } catch (error) {
+      console.error("Error fetching leave adjustment policies:", error);
+    }
+  };
+
   useEffect(() => {
-    fetchLeaveGroups();
+    const fetchAllData = async () => {
+      await Promise.all([
+        fetchLeaveGroups(),
+        fetchLeaveTypes(),
+        fetchLeaveAdjustmentPolicies()
+      ]);
+    };
+    fetchAllData();
   }, []);
 
   const columns = [
@@ -141,16 +176,34 @@ const LeaveGroup = () => {
       key: "action",
       label: "Actions",
       searchable: false,
-      render: () => (
+      render: (row: any) => (
         <div className="flex gap-2">
-          <Trash size={16} color={defaultColor?.main_blue} />
-          <Edit size={16} color={defaultColor?.main_blue} />
-          <View size={16} color={defaultColor?.main_blue} />
+          <button
+            onClick={() => handleEditLeaveGroup(row)}
+            className="p-1 hover:bg-gray-100 rounded"
+            title="Edit Leave Group"
+          >
+            <Edit size={16} color={defaultColor?.main_blue} />
+          </button>
+          <button
+            onClick={() => handleDeleteLeaveGroup(row)}
+            className="p-1 hover:bg-gray-100 rounded"
+            title="Delete Leave Group"
+          >
+            <Trash size={16} color={defaultColor?.main_blue} />
+          </button>
+          <button
+            onClick={() => {/* TODO: Implement view */}}
+            className="p-1 hover:bg-gray-100 rounded"
+            title="View Leave Group"
+          >
+            <View size={16} color={defaultColor?.main_blue} />
+          </button>
         </div>
       ),
     },
     { key: "sno", label: "S.No", searchable: false },
-    { key: "code", label: "Code", searchable: true },
+    { key: "name", label: "ID", searchable: true },
     { key: "leave_group", label: "Leave Group", searchable: true },
     { key: "leave_adjustment_policy", label: "Leave Adjustment Policy", searchable: true },
   ];
@@ -173,14 +226,41 @@ const LeaveGroup = () => {
       const isValid = validateForm(state.formFields, state);
       if (!isValid) return;
 
+      // Validate selected rows
+      if (state.selectedRows.length === 0) {
+        toast.error("Please select at least one leave type row");
+        return;
+      }
+
+      // Validate each selected leave type row
+      for (const rowId of state.selectedRows) {
+        const row = state.leaveTypeRows.find((r: LeaveTypeRow) => r.id === rowId);
+        if (!row || !row.leave_type || row.leave_days <= 0) {
+          toast.error("Please fill leave type and leave days for all selected rows");
+          return;
+        }
+      }
+
+      // Only include selected rows in the API request
+      const selectedRowsData = state.leaveTypeRows
+        .filter((row: LeaveTypeRow) => state.selectedRows.includes(row.id))
+        .map((row: any) => ({
+          leave_type: row.leave_type,
+          renew_on: row.renew_on,
+          leave_unit: row.leave_unit,
+          leave_days: row.leave_days,
+        }));
+
       const send_object = {
-        code: state.code,
         leave_group: state.leave_group,
         leave_adjustment_policy: state.leave_adjustment_policy,
+        leave_group_table: selectedRowsData
       };
 
       console.log("Creating leave group:", send_object);
-      // API call would go here
+      
+      const response = await apiClient.post('/resource/Leave Group', send_object);
+      console.log("Leave Group created:", response);
       
       toast.success("Leave Group created successfully");
       setState({ leave_group_dialog: false });
@@ -195,18 +275,20 @@ const LeaveGroup = () => {
     const newRow = {
       id: Date.now().toString(),
       leave_type: "",
-      renew_on: "",
-      leave_unit: "",
+      renew_on: "Every Calendar Days",
+      leave_unit: "Days",
       leave_days: 0,
     };
     setState({
-      leaveTypeRows: [...state.leaveTypeRows, newRow]
+      leaveTypeRows: [...state.leaveTypeRows, newRow],
+      selectedRows: [] // Clear selections when adding new row
     });
   };
 
   const removeLeaveTypeRow = (id: string) => {
     setState({
-      leaveTypeRows: state.leaveTypeRows.filter((row: LeaveTypeRow) => row.id !== id)
+      leaveTypeRows: state.leaveTypeRows.filter((row: LeaveTypeRow) => row.id !== id),
+      selectedRows: state.selectedRows.filter((rowId: string) => rowId !== id)
     });
   };
 
@@ -216,6 +298,185 @@ const LeaveGroup = () => {
         row.id === id ? { ...row, [field]: value } : row
       )
     });
+  };
+
+  const toggleRowSelection = (id: string) => {
+    console.log("Toggle row selection for ID:", id, "Current selectedRows:", state.selectedRows);
+    
+    const isSelected = state.selectedRows.includes(id);
+    
+    if (isSelected) {
+      const newSelectedRows = state.selectedRows.filter((rowId: string) => rowId !== id);
+      console.log("Removing from selection, new array:", newSelectedRows);
+      setState({
+        ...state,
+        selectedRows: newSelectedRows
+      });
+    } else {
+      const newSelectedRows = [...state.selectedRows, id];
+      console.log("Adding to selection, new array:", newSelectedRows);
+      setState({
+        ...state,
+        selectedRows: newSelectedRows
+      });
+    }
+  };
+
+  const isRowSelected = (id: string) => {
+    return state.selectedRows.includes(id);
+  };
+
+  const handleEditLeaveGroup = async (leaveGroup: TableLeaveGroup) => {
+    try {
+      setState({
+        editingLeaveGroup: leaveGroup,
+        isEditMode: true,
+        leave_group: leaveGroup.leave_group,
+        leave_adjustment_policy: leaveGroup.leave_adjustment_policy,
+        leave_group_dialog: true,
+        selectedRows: []
+      });
+
+      // Fetch the complete leave group data including leave_group_table
+      const response: any = await apiClient.get(`/resource/Leave Group/${leaveGroup.name}`);
+      console.log("Fetched leave group data for editing:", response);
+
+      // Access the data from the response wrapper
+      const leaveGroupData = response.data || response;
+      console.log("Leave group data:", leaveGroupData);
+
+      if (leaveGroupData && leaveGroupData.leave_group_table && Array.isArray(leaveGroupData.leave_group_table)) {
+        // Transform the API data to match our LeaveTypeRow interface
+        const leaveTypeRows = leaveGroupData.leave_group_table.map((item: any, index: number) => ({
+          id: `existing_${index}_${Date.now()}`, // Generate unique ID
+          leave_type: item.leave_type || "",
+          renew_on: item.renew_on || "Every Calendar Days",
+          leave_unit: item.leave_unit || "Days",
+          leave_days: item.leave_days || 0,
+        }));
+
+        // Pre-select all existing rows
+        const selectedRowIds = leaveTypeRows.map((row: any) => row.id);
+
+        setState({
+          leaveTypeRows: leaveTypeRows,
+          selectedRows: selectedRowIds
+        });
+
+        console.log("Populated leave type rows:", leaveTypeRows);
+        console.log("Pre-selected rows:", selectedRowIds);
+      } else {
+        // If no leave_group_table data, start with empty row
+        setState({
+          leaveTypeRows: [{
+            id: Date.now().toString(),
+            leave_type: "",
+            renew_on: "Every Calendar Days",
+            leave_unit: "Days",
+            leave_days: 0,
+          }],
+          selectedRows: []
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching leave group data for editing:", error);
+      toast.error("Error loading leave group data");
+    }
+  };
+
+  const handleUpdateLeaveGroup = async () => {
+    try {
+      const isValid = validateForm(state.formFields, state);
+      if (!isValid) return;
+
+      // Validate selected rows
+      if (state.selectedRows.length === 0) {
+        toast.error("Please select at least one leave type row");
+        return;
+      }
+
+      // Validate each selected leave type row
+      for (const rowId of state.selectedRows) {
+        const row = state.leaveTypeRows.find((r: LeaveTypeRow) => r.id === rowId);
+        if (!row || !row.leave_type || row.leave_days <= 0) {
+          toast.error("Please fill leave type and leave days for all selected rows");
+          return;
+        }
+      }
+
+      // Only include selected rows in the API request
+      const selectedRowsData = state.leaveTypeRows
+        .filter((row: LeaveTypeRow) => state.selectedRows.includes(row.id))
+        .map((row: any) => ({
+          leave_type: row.leave_type,
+          renew_on: row.renew_on,
+          leave_unit: row.leave_unit,
+          leave_days: row.leave_days,
+        }));
+
+      const updateData = {
+        leave_group_table: selectedRowsData
+      };
+
+      console.log("Updating leave group:", updateData);
+      
+      const response = await apiClient.patch(`/resource/Leave Group/${state.editingLeaveGroup.name}`, updateData);
+      console.log("Leave Group updated:", response);
+      
+      toast.success("Leave Group updated successfully");
+      setState({ 
+        leave_group_dialog: false,
+        editingLeaveGroup: null,
+        isEditMode: false,
+        selectedRows: []
+      });
+      fetchLeaveGroups();
+    } catch (error) {
+      console.error("Error updating leave group:", error);
+      toast.error("Error updating leave group");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setState({
+      leave_group_dialog: false,
+      editingLeaveGroup: null,
+      isEditMode: false,
+      selectedRows: [],
+      leave_group: "",
+      leave_adjustment_policy: "",
+      leaveTypeRows: [{
+        id: "1",
+        leave_type: "",
+        renew_on: "Every Calendar Days",
+        leave_unit: "Days",
+        leave_days: 0,
+      }]
+    });
+  };
+
+  const handleDeleteLeaveGroup = async (leaveGroup: TableLeaveGroup) => {
+    try {
+      // Show confirmation dialog
+      const confirmed = window.confirm(
+        `Are you sure you want to delete the leave group "${leaveGroup.leave_group}"?\n\nThis action cannot be undone.`
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+
+      console.log("Deleting leave group:", leaveGroup.name);
+      
+      const response = await apiClient.delete(`/resource/Leave Group/${leaveGroup.name}`);
+      console.log("Leave Group deleted:", response);
+      
+      toast.success("Leave Group deleted successfully");
+      fetchLeaveGroups(); // Refresh the list
+    } catch (error) {
+      console.error("Error deleting leave group:", error);
+      toast.error("Error deleting leave group");
+    }
   };
 
   return (
@@ -250,12 +511,12 @@ const LeaveGroup = () => {
 
         <MuiDialog
           open={state?.leave_group_dialog}
-          onClose={() => setState({ leave_group_dialog: false })}
+          onClose={state.isEditMode ? handleCancelEdit : () => setState({ leave_group_dialog: false })}
           multiple_btn={true}
-          title="Leave Group"
+          title={state.isEditMode ? "Edit Leave Group" : "Create Leave Group"}
           description={false}
           maxWidth="lg"
-          onSave={handleCreateLeaveGroup}
+          onSave={state.isEditMode ? handleUpdateLeaveGroup : handleCreateLeaveGroup}
         >
           <div id="leave-group-parent">
             {/* Basic Information Section */}
@@ -281,37 +542,56 @@ const LeaveGroup = () => {
                 sx={{ margin: 0, backgroundColor: defaultColor.main_grey }}
               >
                 <Grid container spacing={2}>
-                  {state?.formFields?.map((field: any, index: number) => (
-                    <Grid
-                      key={field.input_name || index}
-                      size={{
-                        xs: 12,
-                        md: field.grid_size,
-                      }}
-                    >
-                      <CustomTextField
-                        input_value={state[field.input_name]}
-                        onchange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-                          setState({
-                            ...state,
-                            [field.input_name]: e.target.value,
-                          })
-                        }
-                        required={field.required}
-                        input_name={field.input_name}
-                        error={!state[field.input_name]}
-                        startIcon={field.startIcon}
-                        placeholder={field.placeholder}
-                        input_label={field.input_label}
-                        isDisable={field.isDisable}
-                      />
-                    </Grid>
-                  ))}
+                   {state?.formFields?.map((field: any, index: number) => (
+                     <Grid
+                       key={field.input_name || index}
+                       size={{
+                         xs: 12,
+                         md: field.grid_size,
+                       }}
+                     >
+                       {field.type === "select" ? (
+                         <CustomSelectField
+                           name={field.input_name}
+                           label={field.input_label}
+                           value={state[field.input_name]}
+                           onChange={(e) =>
+                             setState({
+                               ...state,
+                               [field.input_name]: e.target.value,
+                             })
+                           }
+                           placeholder={field.placeholder}
+                           options={field.input_name === "leave_adjustment_policy" 
+                             ? state.leave_adjustment_policy_options 
+                             : field.options || []}
+                           required={field.required}
+                         />
+                       ) : (
+                         <CustomTextField
+                           input_value={state[field.input_name]}
+                           onchange={(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                             setState({
+                               ...state,
+                               [field.input_name]: e.target.value,
+                             })
+                           }
+                           required={field.required}
+                           input_name={field.input_name}
+                           error={!state[field.input_name]}
+                           startIcon={field.startIcon}
+                           placeholder={field.placeholder}
+                           input_label={field.input_label}
+                           isDisable={field.isDisable || state.isEditMode}
+                         />
+                       )}
+                     </Grid>
+                   ))}
                 </Grid>
               </AccordionDetails>
             </Accordion>
 
-            {/* Leave Adjustment Policy Section */}
+            {/* Leave Group Table Section */}
             <Accordion defaultExpanded>
               <AccordionSummary
                 sx={{ margin: 0, backgroundColor: defaultColor.main_grey }}
@@ -327,13 +607,13 @@ const LeaveGroup = () => {
                     margin: 0,
                   }}
                 >
-                  Leave Adjustment Policy
+                  {state.isEditMode ? "Update Leave Group Table" : "Leave Group Table"}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails
                 sx={{ margin: 0, backgroundColor: defaultColor.main_grey }}
               >
-                <div className="mb-4">
+                <div className="mb-4 flex justify-between items-center">
                   <button
                     onClick={addNewLeaveTypeRow}
                     className="flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors"
@@ -341,23 +621,47 @@ const LeaveGroup = () => {
                     <Plus size={16} />
                     New
                   </button>
+                  <div className="flex items-center gap-4">
+                    <div className="text-sm text-gray-600">
+                      Selected: {state.selectedRows.length} row(s)
+                    </div>
+                    <button
+                      onClick={() => {
+                        console.log("Current state:", state);
+                        console.log("Selected rows:", state.selectedRows);
+                        console.log("Leave type rows:", state.leaveTypeRows);
+                      }}
+                      className="px-2 py-1 bg-gray-500 text-white rounded text-xs"
+                    >
+                      Debug State
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="overflow-x-auto">
                   <table className="w-full border border-gray-300">
                     <thead>
                       <tr className="bg-gray-100">
-                        <th className="border border-gray-300 p-2 text-left text-sm">S.No</th>
-                        <th className="border border-gray-300 p-2 text-left text-sm">Leave Type</th>
-                        <th className="border border-gray-300 p-2 text-left text-sm">Renew On</th>
-                        <th className="border border-gray-300 p-2 text-left text-sm">Leave Unit</th>
-                        <th className="border border-gray-300 p-2 text-left text-sm">Leave Days</th>
-                        <th className="border border-gray-300 p-2 text-left text-sm">Actions</th>
+                         <th className="border border-gray-300 p-2 text-left text-sm">Select</th>
+                         <th className="border border-gray-300 p-2 text-left text-sm">S.No</th>
+                         <th className="border border-gray-300 p-2 text-left text-sm">Leave Type</th>
+                         <th className="border border-gray-300 p-2 text-left text-sm">Renew On</th>
+                         <th className="border border-gray-300 p-2 text-left text-sm">Leave Unit</th>
+                         <th className="border border-gray-300 p-2 text-left text-sm">Leave Days</th>
+                         <th className="border border-gray-300 p-2 text-left text-sm">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {state.leaveTypeRows.map((row: LeaveTypeRow, index: number) => (
                         <tr key={row.id}>
+                          <td className="border border-gray-300 p-2 text-center">
+                            <input
+                              type="checkbox"
+                              checked={isRowSelected(row.id)}
+                              onChange={() => toggleRowSelection(row.id)}
+                              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                            />
+                          </td>
                           <td className="border border-gray-300 p-2 text-sm">{index + 1}</td>
                           <td className="border border-gray-300 p-2">
                             <CustomSelectField
@@ -369,34 +673,23 @@ const LeaveGroup = () => {
                               options={state.leave_types_options}
                             />
                           </td>
-                          <td className="border border-gray-300 p-2">
-                            <CustomSelectField
-                              name={`renew_on_${row.id}`}
-                              label=""
-                              value={row.renew_on}
-                              onChange={(e) => updateLeaveTypeRow(row.id, 'renew_on', e.target.value)}
-                              placeholder="Select Renew On"
-                              options={state.renew_on_options}
-                            />
-                          </td>
-                          <td className="border border-gray-300 p-2">
-                            <CustomSelectField
-                              name={`leave_unit_${row.id}`}
-                              label=""
-                              value={row.leave_unit}
-                              onChange={(e) => updateLeaveTypeRow(row.id, 'leave_unit', e.target.value)}
-                              placeholder="Select Unit"
-                              options={state.leave_unit_options}
-                            />
-                          </td>
+                           <td className="border border-gray-300 p-2">
+                             <div className="px-3 py-2 bg-gray-100 rounded border text-sm">
+                               Every Calendar Days
+                             </div>
+                           </td>
+                           <td className="border border-gray-300 p-2">
+                             <div className="px-3 py-2 bg-gray-100 rounded border text-sm">
+                               Days
+                             </div>
+                           </td>
                           <td className="border border-gray-300 p-2">
                             <CustomTextField
-                              input_value={row.leave_days}
+                              input_value={row.leave_days.toString()}
                               onchange={(e) => updateLeaveTypeRow(row.id, 'leave_days', parseInt(e.target.value) || 0)}
                               input_name={`leave_days_${row.id}`}
                               placeholder="Enter Days"
                               input_label=""
-                              type="number"
                             />
                           </td>
                           <td className="border border-gray-300 p-2">

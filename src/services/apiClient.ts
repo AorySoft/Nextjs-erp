@@ -6,7 +6,6 @@ const apiClient = axios.create({
   headers: {
     "Content-Type": "application/json",
     "Accept": "application/json",
-    "Expect": "", // 👈 prevent 417 error
   },
   // Remove default timeout to allow for longer timeouts when specified in individual requests
   timeout: 600000, // 10 minutes default timeout
