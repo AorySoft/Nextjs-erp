@@ -13,8 +13,9 @@ export default function HumanResourceLayout({ children }: HumanResourceLayoutPro
 
   return (
     <DashboardLayout breadcrumbs={breadcrumbs}>
-        <div className="overflow-y-auto"> {children}</div>
-     
+      <div className="w-full h-full overflow-auto px-6 py-4">
+        {children}
+      </div>
     </DashboardLayout>
   );
 }

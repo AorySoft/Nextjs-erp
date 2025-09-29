@@ -20,7 +20,7 @@ interface DataTableProps {
 const DataTable: React.FC<DataTableProps> = ({
   columns,
   data,
-  defaultLimit = 5,
+  defaultLimit = 10,
 }) => {
   const [filters, setFilters] = useState<{ [key: string]: string }>({});
   const [currentPage, setCurrentPage] = useState(1);

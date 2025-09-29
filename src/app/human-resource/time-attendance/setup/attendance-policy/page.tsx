@@ -117,18 +117,17 @@ const AttendancePolicy = () => {
     (state: any, newState: any) => ({ ...state, ...newState }),
     {
       employee_dialog: false,
+      Policy: [],
       AbsentPolicy: [
-        {
-          id: 1,
-          period_type: "00:00",
-          // end_time: "00:60",
-          policy_count: 0,
-          absent_count: 0,
-          // period_type: "Daily",
-          // type: "Count",
-          // value: 1,
-        },
+         {
+           id: 1,
+           period_type: "Daily",
+           policy_count: 0,
+           absent_count: "0",
+         },
       ],
+      selectedPolicyRows: [],
+      selectedAbsentPolicyRows: [],
     }
   );
 
@@ -286,38 +285,37 @@ const AttendancePolicy = () => {
 //
 
 
-  const deleteRows = () => {
-    try {
-      const updatedData = state.AbsentPolicy.filter(
-        (row: any) => !selectedIds.includes(row.id)
-      );
-      setState({ AbsentPolicy: updatedData });
-      setSelectedIds([]); // clear selection
-    } catch (err) {
-      console.error("Error deleting rows:", err);
-    }
-  };
-  const addRow = useCallback(() => {
-    const currentList = state.AbsentPolicy ?? [];
-
-    // Find max id for uniqueness
-    const maxId = currentList.length
-      ? Math.max(...currentList.map((item: any) => item.id))
-      : 0;
-
+   const deleteRows = () => {
+     try {
+       const updatedData = state.AbsentPolicy.filter(
+         (row: any) => !state.selectedAbsentPolicyRows.includes(row.id)
+       );
+       setState({ 
+         AbsentPolicy: updatedData,
+         selectedAbsentPolicyRows: [] // clear selection
+       });
+     } catch (err) {
+       console.error("Error deleting rows:", err);
+     }
+   };
+  const addRow = () => {
     const newRow = {
-      id: maxId + 1,
-      period_type: "00:00",
-      // end_time: "00:60",
+      id: Date.now().toString(), // Use timestamp for unique ID
+      period_type: "Daily",
       policy_count: 0,
-      absent_count: 0,
+      absent_count: "0",
     };
 
-    // ✅ Use concat (faster than spread for large arrays)
+    console.log("Adding new AbsentPolicy row:", newRow);
+    console.log("Current AbsentPolicy state:", state.AbsentPolicy);
+    
     setState({
-      AbsentPolicy: currentList.concat(newRow),
+      AbsentPolicy: [...(state.AbsentPolicy || []), newRow],
+      selectedAbsentPolicyRows: [] // Clear selections when adding new row
     });
-  }, [state.AbsentPolicy, setState]);
+    
+    console.log("New AbsentPolicy state after add:", [...(state.AbsentPolicy || []), newRow]);
+  };
 
   const handleDataChange = (updatedData: any[]) => {
     console.log("Updated Table Data:", updatedData);
@@ -345,42 +343,96 @@ const AttendancePolicy = () => {
     }));
   }, []);
 
-  const deleteRowsPolicy = () => {
-    try {
-      const updatedData = state.Policy.filter(
-        (row: any) => !selectedIds.includes(row.id)
-      );
-      setState({ Policy: updatedData });
-      setSelectedIds([]); // clear selection
-    } catch (err) {
-      console.error("Error deleting rows:", err);
-    }
-  };
-  const addRowPolicy = useCallback(() => {
-    const currentList = state.Policy ?? [];
-
-    // Find max id for uniqueness
-    const maxId = currentList.length
-      ? Math.max(...currentList.map((item: any) => item.id))
-      : 0;
-
+   const deleteRowsPolicy = () => {
+     try {
+       const updatedData = state.Policy.filter(
+         (row: any) => !state.selectedPolicyRows.includes(row.id)
+       );
+       setState({ 
+         Policy: updatedData,
+         selectedPolicyRows: [] // clear selection
+       });
+     } catch (err) {
+       console.error("Error deleting rows:", err);
+     }
+   };
+  const addRowPolicy = () => {
     const newRow = {
-      id: maxId + 1,
-      start_time: "00:00",
-      end_time: "00:60",
+      id: Date.now().toString(), // Use timestamp for unique ID
+      start_time: 480, // 8:00 AM in minutes
+      end_time: 1080,  // 6:00 PM in minutes
       period_type: "Daily",
       type: "Count",
       value: 1,
     };
 
-    // ✅ Use concat (faster than spread for large arrays)
+    console.log("Adding new Policy row:", newRow);
+    console.log("Current Policy state:", state.Policy);
+    
     setState({
-      Policy: currentList.concat(newRow),
+      Policy: [...(state.Policy || []), newRow],
+      selectedPolicyRows: [] // Clear selections when adding new row
     });
-  }, [state?.Policy, setState]);
+    
+    console.log("New Policy state after add:", [...(state.Policy || []), newRow]);
+  };
 
   const handleDataChangePolicy = (updatedData: any[]) => {
     console.log("Updated Table Data:", updatedData);
+  };
+
+  // Selection functions for Policy table
+  const togglePolicyRowSelection = (id: string) => {
+    console.log("Toggle Policy row selection for ID:", id, "Current selectedPolicyRows:", state.selectedPolicyRows);
+    
+    const isSelected = state.selectedPolicyRows.includes(id);
+    
+    if (isSelected) {
+      const newSelectedRows = state.selectedPolicyRows.filter((rowId: string) => rowId !== id);
+      console.log("Removing from Policy selection, new array:", newSelectedRows);
+      setState({
+        ...state,
+        selectedPolicyRows: newSelectedRows
+      });
+    } else {
+      const newSelectedRows = [...state.selectedPolicyRows, id];
+      console.log("Adding to Policy selection, new array:", newSelectedRows);
+      setState({
+        ...state,
+        selectedPolicyRows: newSelectedRows
+      });
+    }
+  };
+
+  const isPolicyRowSelected = (id: string) => {
+    return state.selectedPolicyRows.includes(id);
+  };
+
+  // Selection functions for AbsentPolicy table
+  const toggleAbsentPolicyRowSelection = (id: string) => {
+    console.log("Toggle AbsentPolicy row selection for ID:", id, "Current selectedAbsentPolicyRows:", state.selectedAbsentPolicyRows);
+    
+    const isSelected = state.selectedAbsentPolicyRows.includes(id);
+    
+    if (isSelected) {
+      const newSelectedRows = state.selectedAbsentPolicyRows.filter((rowId: string) => rowId !== id);
+      console.log("Removing from AbsentPolicy selection, new array:", newSelectedRows);
+      setState({
+        ...state,
+        selectedAbsentPolicyRows: newSelectedRows
+      });
+    } else {
+      const newSelectedRows = [...state.selectedAbsentPolicyRows, id];
+      console.log("Adding to AbsentPolicy selection, new array:", newSelectedRows);
+      setState({
+        ...state,
+        selectedAbsentPolicyRows: newSelectedRows
+      });
+    }
+  };
+
+  const isAbsentPolicyRowSelected = (id: string) => {
+    return state.selectedAbsentPolicyRows.includes(id);
   };
   const createPolicy = async () => {
     // console.log(state, "s->>>>");
@@ -389,25 +441,30 @@ const AttendancePolicy = () => {
         policy_name: state?.policy_name,
         policy_type: state?.policy_type,
         no_of_excuse: Number(state?.no_of_excuse), //int
-        policy: state?.Policy?.map((item: any) => {
-          return {
-            start_time: Number(item.start_time), //int
-            end_time: Number(item.end_time), //int
-            period_type: item.period_type, //Select Daily or Monthly
-            type: item.type, //Select Count, Excuse, Absent
-            value: Number(item.value), //int
-          };
-        }),
-        absent_policy: state?.AbsentPolicy?.map((item: any) => {
-          return {
-            period_type: item.period_type, //Select Daily or Monthly
-            policy_count: Number(item.policy_count), //int
-            absent_count: item.absent_count,
-          };
-        }),
+        policy: state?.Policy
+          ?.filter((item: any) => state.selectedPolicyRows.includes(item.id))
+          ?.map((item: any) => {
+            return {
+              start_time: Number(item.start_time), //int
+              end_time: Number(item.end_time), //int
+              period_type: item.period_type, //Select Daily or Monthly
+              type: item.type, //Select Count, Excuse, Absent
+              value: Number(item.value), //int
+            };
+          }) || [],
+        absent_policy: state?.AbsentPolicy
+          ?.filter((item: any) => state.selectedAbsentPolicyRows.includes(item.id))
+          ?.map((item: any) => {
+            return {
+              period_type: item.period_type, //Select Daily or Monthly
+              policy_count: Number(item.policy_count), //int
+              absent_count: String(item.absent_count), //string
+            };
+          }) || [],
       };
+      console.log("Creating policy with data:", send_object);
       const resp = await apiClient.post("/resource/Attendance Policies", send_object);  
-      console.log(resp, "resp");
+      console.log("Create response:", resp);
        toast.success("Policy created successfully");
        // Close the create dialog and reset form
        setState({ 
@@ -420,10 +477,12 @@ const AttendancePolicy = () => {
          Policy: [],
          AbsentPolicy: [{
            id: 1,
-           period_type: "00:00",
+           period_type: "Daily",
            policy_count: 0,
            absent_count: 0,
-         }]
+         }],
+         selectedPolicyRows: [],
+         selectedAbsentPolicyRows: []
        });
        await fetchAttendancePolicies();
        await fetchFormOptions();
@@ -437,22 +496,26 @@ const AttendancePolicy = () => {
         policy_name: state?.policy_name,
         policy_type: state?.policy_type,
         no_of_excuse: Number(state?.no_of_excuse), //int
-        policy: state?.Policy?.map((item: any) => {
-          return {
-            start_time: Number(item.start_time), //int
-            end_time: Number(item.end_time), //int
-            period_type: item.period_type, //Select Daily or Monthly
-            type: item.type, //Select Count, Excuse, Absent
-            value: Number(item.value), //int
-          };
-        }),
-        absent_policy: state?.AbsentPolicy?.map((item: any) => {
-          return {
-            period_type: item.period_type, //Select Daily or Monthly
-            policy_count: Number(item.policy_count), //int
-            absent_count: item.absent_count,
-          };
-        }),
+        policy: state?.Policy
+          ?.filter((item: any) => state.selectedPolicyRows.includes(item.id))
+          ?.map((item: any) => {
+            return {
+              start_time: Number(item.start_time), //int
+              end_time: Number(item.end_time), //int
+              period_type: item.period_type, //Select Daily or Monthly
+              type: item.type, //Select Count, Excuse, Absent
+              value: Number(item.value), //int
+            };
+          }) || [],
+        absent_policy: state?.AbsentPolicy
+          ?.filter((item: any) => state.selectedAbsentPolicyRows.includes(item.id))
+          ?.map((item: any) => {
+            return {
+              period_type: item.period_type, //Select Daily or Monthly
+              policy_count: Number(item.policy_count), //int
+              absent_count: String(item.absent_count), //string
+            };
+          }) || [],
       };
 
       // Check if policy name has changed - if so, use rename API first
@@ -467,6 +530,7 @@ const AttendancePolicy = () => {
       }
 
       // Update other fields using standard PUT API
+      console.log("Updating policy with data:", send_object);
       const resp = await apiClient.update(`/resource/Attendance Policies/${state?.policy_name}`, send_object);  
       console.log("Update response:", resp);
       toast.success("Policy updated successfully");
@@ -514,16 +578,26 @@ const AttendancePolicy = () => {
       const resp:any = await apiClient.get(`resource/Attendance Policies/${row.id}`); 
       console.log(resp, "resp");
       // toast.success("Policy fetched successfully");
-      if(resp.data){
-        setState({ view_dialog: true ,
-          Policy: resp?.data?.policy,
-          AbsentPolicy: resp?.data?.absent_policy,
-          policy_name: resp?.data?.policy_name,
-          policy_type: resp?.data?.policy_type,
-          no_of_excuse: resp?.data?.no_of_excuse,
-          updated_name: resp?.data?.name,
-        });
-      }else{
+       if(resp.data){
+         // Load the data and select all existing rows to show what was previously selected
+         const policyData = resp?.data?.policy || [];
+         const absentPolicyData = resp?.data?.absent_policy || [];
+         
+         // Select all existing rows to show what was previously selected
+         const allPolicyIds = policyData.map((item: any) => item.id);
+         const allAbsentPolicyIds = absentPolicyData.map((item: any) => item.id);
+         
+         setState({ view_dialog: true ,
+           Policy: policyData,
+           AbsentPolicy: absentPolicyData,
+           policy_name: resp?.data?.policy_name,
+           policy_type: resp?.data?.policy_type,
+           no_of_excuse: resp?.data?.no_of_excuse,
+           updated_name: resp?.data?.name,
+           selectedPolicyRows: allPolicyIds,
+           selectedAbsentPolicyRows: allAbsentPolicyIds,
+         });
+       }else{
         toast.error("Something went wrong , try again after some time");
       }
 
@@ -562,12 +636,14 @@ const AttendancePolicy = () => {
                    policy_id: "",
                    calculation_basis: "",
                    Policy: [],
-                   AbsentPolicy: [{
-                     id: 1,
-                     period_type: "00:00",
-                     policy_count: 0,
-                     absent_count: 0,
-                   }]
+         AbsentPolicy: [{
+           id: 1,
+           period_type: "Daily",
+           policy_count: 0,
+           absent_count: 0,
+         }],
+         selectedPolicyRows: [],
+         selectedAbsentPolicyRows: []
                  });
                }}
              >
@@ -594,12 +670,14 @@ const AttendancePolicy = () => {
              policy_id: "",
              calculation_basis: "",
              Policy: [],
-             AbsentPolicy: [{
-               id: 1,
-               period_type: "00:00",
-               policy_count: 0,
-               absent_count: 0,
-             }]
+         AbsentPolicy: [{
+           id: 1,
+           period_type: "Daily",
+           policy_count: 0,
+           absent_count: 0,
+         }],
+         selectedPolicyRows: [],
+         selectedAbsentPolicyRows: []
            });
          }}
         multiple_btn={true}
@@ -782,13 +860,13 @@ const AttendancePolicy = () => {
                     columns={[
                       {
                         key: "start_time",
-                        label: "Start Time",
+                        label: "Start Time (minutes)",
                         editable: true,
                         type: "input",
                       },
                       {
                         key: "end_time",
-                        label: "End Time",
+                        label: "End Time (minutes)",
                         editable: true,
                         type: "input",
                       },
@@ -825,7 +903,7 @@ const AttendancePolicy = () => {
                     onDataChange={(updatedData) =>
                       setState({ Policy: updatedData })
                     }
-                    onSelectionChange={handleSelectionChange}
+                    onSelectionChange={(selectedIds) => setState({ selectedPolicyRows: selectedIds })}
                   />
                 </Grid>
               </Grid>
@@ -859,18 +937,18 @@ const AttendancePolicy = () => {
                         type: "select",
                         options: ["Daily", "Monthly", "None"],
                       },
-                      {
-                        key: "policy_count",
-                        label: "Policy count",
-                        editable: true,
-                        type: "input",
-                      },
-                      {
-                        key: "absent_count",
-                        label: "Absent count",
-                        editable: true,
-                        type: "input",
-                      },
+                       {
+                         key: "policy_count",
+                         label: "Policy Count",
+                         editable: true,
+                         type: "input",
+                       },
+                       {
+                         key: "absent_count",
+                         label: "Absent Count",
+                         editable: true,
+                         type: "input",
+                       },
 
                       // "start_time": 0,//int
                       // "end_time": 60,//int
@@ -878,30 +956,11 @@ const AttendancePolicy = () => {
                       // "type": "Count",//Select Count, Excuse, Absent
                       // "value": 1 //int
                     ]}
-                    data={
-                      state?.AbsentPolicy ?? [
-                        {
-                          id: 1,
-                          start_time: 0,
-                          end_time: 60,
-                          period_type: "Daily",
-                          type: "Count",
-                          value: 1,
-                        },
-                        {
-                          id: 2,
-                          start_time: 0,
-                          end_time: 60,
-                          period_type: "Daily",
-                          type: "Count",
-                          value: 1,
-                        },
-                      ]
-                    }
+                    data={state?.AbsentPolicy ?? []}
                     onDataChange={(updatedData) =>
                       setState({ AbsentPolicy: updatedData })
                     }
-                    onSelectionChange={(ids) => setSelectedIds(ids)} // ✅ Capture selected rows
+                    onSelectionChange={(ids) => setState({ selectedAbsentPolicyRows: ids })} // ✅ Capture selected rows
                     // onDataChange={handleDataChange}
                   />
                 </Grid>
@@ -1142,13 +1201,13 @@ const AttendancePolicy = () => {
                     columns={[
                       {
                         key: "start_time",
-                        label: "Start Time",
+                        label: "Start Time (minutes)",
                         editable: true,
                         type: "input",
                       },
                       {
                         key: "end_time",
-                        label: "End Time",
+                        label: "End Time (minutes)",
                         editable: true,
                         type: "input",
                       },
@@ -1185,7 +1244,7 @@ const AttendancePolicy = () => {
                     onDataChange={(updatedData) =>
                       setState({ Policy: updatedData })
                     }
-                    onSelectionChange={handleSelectionChange}
+                    onSelectionChange={(selectedIds) => setState({ selectedPolicyRows: selectedIds })}
                   />
                 </Grid>
               </Grid>
@@ -1219,18 +1278,18 @@ const AttendancePolicy = () => {
                         type: "select",
                         options: ["Daily", "Monthly", "None"],
                       },
-                      {
-                        key: "policy_count",
-                        label: "Policy count",
-                        editable: true,
-                        type: "input",
-                      },
-                      {
-                        key: "absent_count",
-                        label: "Absent count",
-                        editable: true,
-                        type: "input",
-                      },
+                       {
+                         key: "policy_count",
+                         label: "Policy Count",
+                         editable: true,
+                         type: "input",
+                       },
+                       {
+                         key: "absent_count",
+                         label: "Absent Count",
+                         editable: true,
+                         type: "input",
+                       },
 
                       // "start_time": 0,//int
                       // "end_time": 60,//int
@@ -1238,30 +1297,11 @@ const AttendancePolicy = () => {
                       // "type": "Count",//Select Count, Excuse, Absent
                       // "value": 1 //int
                     ]}
-                    data={
-                      state?.AbsentPolicy ?? [
-                        {
-                          id: 1,
-                          start_time: 0,
-                          end_time: 60,
-                          period_type: "Daily",
-                          type: "Count",
-                          value: 1,
-                        },
-                        {
-                          id: 2,
-                          start_time: 0,
-                          end_time: 60,
-                          period_type: "Daily",
-                          type: "Count",
-                          value: 1,
-                        },
-                      ]
-                    }
+                    data={state?.AbsentPolicy ?? []}
                     onDataChange={(updatedData) =>
                       setState({ AbsentPolicy: updatedData })
                     }
-                    onSelectionChange={(ids) => setSelectedIds(ids)} // ✅ Capture selected rows
+                    onSelectionChange={(ids) => setState({ selectedAbsentPolicyRows: ids })} // ✅ Capture selected rows
                     // onDataChange={handleDataChange}
                   />
                 </Grid>

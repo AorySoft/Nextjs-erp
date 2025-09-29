@@ -17,6 +17,7 @@ import CustomDateInputField from "@/components/ui/DatePicker"
 import CustomSelectField from "@/components/ui/CustomSelectField"
 import { defaultColor } from "@/utils/constant"
 import apiClient from "@/services/apiClient";
+import request from "@/services/apiClient";
 import { toast } from "react-toastify"
 
 // Steps for the wizard
@@ -72,7 +73,7 @@ const initialQuotaState = {
             className="cursor-pointer hover:opacity-70" 
             onClick={(e) => {
               e.stopPropagation();
-              // deleteLeaveQuotaAllocation(row.name);
+              deleteLeaveQuotaAllocation(row.name);
             }}
           />
           <Edit 
@@ -605,6 +606,51 @@ try {
 } catch (error) {
   
 }
+}
+
+// Delete function
+const deleteLeaveQuotaAllocation = async (recordId: string) => {
+  try {
+    if (window.confirm(`Are you sure you want to delete this leave quota allocation? This action cannot be undone.`)) {
+      console.log("Deleting leave quota allocation:", recordId)
+      
+      try {
+        await request.delete(`/resource/Leave Quota Allocation/${recordId}`)
+        console.log("Leave quota allocation deleted successfully")
+        
+        // Refresh the data table
+        await getAll()
+        
+        toast.success("Leave Quota Allocation deleted successfully")
+      } catch (deleteError: any) {
+        console.error("Delete error:", deleteError)
+        if (deleteError.response?.status === 404) {
+          toast.error(`Record with ID "${recordId}" not found. The record may have already been deleted.`)
+          // Refresh the data table to get updated records
+          await getAll()
+          return
+        } else if (deleteError.response?.status === 403) {
+          toast.error("You don't have permission to delete this leave quota allocation.")
+          return
+        } else if (deleteError.response?.status === 400) {
+          toast.error("Cannot delete this leave quota allocation. It may be in a state that prevents deletion.")
+          return
+        }
+        throw deleteError
+      }
+    }
+  } catch (error: any) {
+    console.error("Error deleting leave quota allocation:", error)
+    if (error.response?.status === 404) {
+      toast.error("Record not found. It may have already been deleted.")
+    } else if (error.response?.status === 403) {
+      toast.error("You don't have permission to delete this leave quota allocation.")
+    } else if (error.response?.status === 400) {
+      toast.error("Cannot delete this leave quota allocation. It may be in a state that prevents deletion.")
+    } else {
+      toast.error(`Error deleting leave quota allocation: ${error.message || "Please try again."}`)
+    }
+  }
 }
   return (
     <div className="p-4 h-[calc(100vh-120px)] overflow-y-auto">

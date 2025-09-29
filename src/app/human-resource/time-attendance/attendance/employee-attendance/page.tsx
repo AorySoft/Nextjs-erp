@@ -85,6 +85,8 @@ interface APIEmployee {
   out_time?: string;
   department?: string;
   status?: string;
+  custom_designation?: string;
+  custom_day?: string;
 }
 
 //
@@ -97,6 +99,7 @@ const EmployeeAttendance = () => {
   const [loading, setLoading] = useState(false);
   const [value, setValue] = React.useState(0);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
 
   const [state, setState] = useReducer(
     (state: any, newState: any) => ({ ...state, ...newState }),
@@ -474,11 +477,19 @@ const EmployeeAttendance = () => {
       console.error("❌ Error fetching form options:", err);
     }
   };
-  const fetchAll = async (date: string = selectedDate) => {
+  const fetchAll = async (date: string = selectedDate, status: string = selectedStatus) => {
     try {
       setLoading(true);
+      
+      // Build filters array
+      const filters = [["attendance_date","=",date]];
+      if (status && status !== "") {
+        filters.push(["status","=",status]);
+      }
+      
+      const filtersString = JSON.stringify(filters);
       const res = await apiClient.get<{ data: APIEmployee[] }>(
-        `/resource/Attendance?fields=["employee","employee_name","department","attendance_date","in_time","out_time","department","status"]&filters=[["attendance_date","=","${date}"]]`
+        `/resource/Attendance?fields=["employee","employee_name","department","attendance_date","in_time","out_time","status","custom_designation","custom_day"]&filters=${filtersString}`
       );
       
       if (res?.data && Array.isArray(res.data)) {
@@ -490,6 +501,8 @@ const EmployeeAttendance = () => {
           out_time: emp.out_time || "",
           department: emp.department || "",
           status: emp.status || "",
+          custom_designation: emp.custom_designation || "",
+          custom_day: emp.custom_day || "",
         })));
       }
     } catch (err) {
@@ -507,10 +520,16 @@ const EmployeeAttendance = () => {
     // No need to call fetchAll here as it will be triggered by the useEffect
   };
 
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newStatus = e.target.value;
+    setSelectedStatus(newStatus);
+    // No need to call fetchAll here as it will be triggered by the useEffect
+  };
+
   useEffect(() => {
-    fetchAll(selectedDate);
+    fetchAll(selectedDate, selectedStatus);
     fetchAllEmployees();
-  }, [selectedDate]);
+  }, [selectedDate, selectedStatus]);
 
   const columns = [
     {
@@ -546,6 +565,8 @@ const EmployeeAttendance = () => {
     { key: "out_time", label: "Out Time", searchable: true },
     { key: "department", label: "Department", searchable: true },
     { key: "status", label: "Status", searchable: true },
+    { key: "custom_designation", label: "Custom Designation", searchable: true },
+    { key: "custom_day", label: "Custom Day", searchable: true },
   ];
   // function for cehcking mandotary fields
   const validateForm = (formFields: any[], formState: any) => {
@@ -646,6 +667,21 @@ if(!state.attendance_date){
                 onChange={handleDateChange}
                 className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
+            </div>
+            <div className="mr-4">
+              <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 mb-1">
+                Filter by Status:
+              </label>
+              <select
+                id="status-filter"
+                value={selectedStatus}
+                onChange={handleStatusChange}
+                className="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Status</option>
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+              </select>
             </div>
             <button
               onClick={() => window.location.reload()}

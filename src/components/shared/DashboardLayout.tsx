@@ -17,17 +17,19 @@ export default function DashboardLayout({ children, breadcrumbs }: DashboardLayo
   ];
 
   return (
-    <div className="flex h-screen bg-[#f8f9fa] font-sans text-[13px] text-[#333] select-none overflow-hidden">
+    <div className="flex h-screen bg-[#f8f9fa] font-sans text-[13px] text-[#333] select-none">
       {/* Sidebar */}
       <Sidebar />
       
       {/* Main content */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col min-w-0">
         {/* Header with integrated breadcrumbs */}
         <Header breadcrumbs={breadcrumbs || defaultBreadcrumbs} />
         
         {/* Content */}
-        {children || <MainContent />}
+        <div className="flex-1 overflow-auto">
+          {children || <MainContent />}
+        </div>
         
         {/* Footer */}
         <Footer />
