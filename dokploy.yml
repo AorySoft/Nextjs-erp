@@ -1,0 +1,8 @@
+name: bms-frontend
+type: dockerfile
+dockerfile: Dockerfile
+port: 3000
+environment:
+  - NODE_ENV=production
+  - NEXT_TELEMETRY_DISABLED=1
+volumes: []
