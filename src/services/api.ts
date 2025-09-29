@@ -247,6 +247,48 @@ export const testAPI = {
   }
 };
 
+// Forgot Password API
+export const forgotPasswordAPI = {
+  // Get employee by CNIC, cell number, and date of birth
+  getEmployeeByCredentials: async (cnic: string, cellNumber: string, dateOfBirth: string) => {
+    try {
+      const response = await apiClient.get(
+        `https://erp.thebenchmark.com.pk/api/resource/Employee?fields=["user_id"]&filters=[["custom_cnic","=","${cnic}"],["cell_number","=","${cellNumber}"],["date_of_birth","=","${dateOfBirth}"]]`
+      );
+      console.log('Employee found:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error finding employee:', error);
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.error || error.response?.data?.details || error.message;
+        throw new Error(`API Error: ${errorMessage}`);
+      }
+      throw error;
+    }
+  },
+
+  // Send password reset email
+  resetPassword: async (userEmail: string) => {
+    try {
+      const response = await apiClient.post(
+        'https://erp.thebenchmark.com.pk/api/method/frappe.core.doctype.user.user.reset_password',
+        {
+          user: userEmail
+        }
+      );
+      console.log('Password reset email sent:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error sending password reset email:', error);
+      if (axios.isAxiosError(error)) {
+        const errorMessage = error.response?.data?.error || error.response?.data?.details || error.message;
+        throw new Error(`API Error: ${errorMessage}`);
+      }
+      throw error;
+    }
+  }
+};
+
 // Holiday List API
 export const holidayListAPI = {
   getHolidayLists: async () => {
