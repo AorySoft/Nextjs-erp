@@ -420,7 +420,7 @@ const LeaveGroup = () => {
 
       console.log("Updating leave group:", updateData);
       
-      const response = await apiClient.patch(`/resource/Leave Group/${state.editingLeaveGroup.name}`, updateData);
+      const response = await apiClient.update(`/resource/Leave Group/${state.editingLeaveGroup.name}`, updateData);
       console.log("Leave Group updated:", response);
       
       toast.success("Leave Group updated successfully");

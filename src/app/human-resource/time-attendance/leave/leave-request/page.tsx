@@ -350,7 +350,7 @@ export default function LeaveRequestPage() {
         // Update existing leave application
         console.log("Updating record with ID:", editingRecordId)
         try {
-          response = await request.patch(`/resource/Leave Application/${editingRecordId}`, apiBody)
+          response = await request.update(`/resource/Leave Application/${editingRecordId}`, apiBody)
           console.log("Leave Request updated successfully!")
         } catch (updateError: any) {
           console.error("Update error:", updateError)

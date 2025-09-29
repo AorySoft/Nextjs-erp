@@ -408,14 +408,30 @@ const AttendancePolicy = () => {
       };
       const resp = await apiClient.post("/resource/Attendance Policies", send_object);  
       console.log(resp, "resp");
-      toast.success("Policy created successfully");
-      window.location.reload();
+       toast.success("Policy created successfully");
+       // Close the create dialog and reset form
+       setState({ 
+         employee_dialog: false,
+         policy_name: "",
+         policy_type: "",
+         no_of_excuse: "",
+         policy_id: "",
+         calculation_basis: "",
+         Policy: [],
+         AbsentPolicy: [{
+           id: 1,
+           period_type: "00:00",
+           policy_count: 0,
+           absent_count: 0,
+         }]
+       });
+       await fetchAttendancePolicies();
+       await fetchFormOptions();
     } catch (error) {
       console.error("Error creating policy:", error);
       toast.error("Failed to create policy");
     }
   };  const updatePolicy = async () => {
-    // console.log(state, "s->>>>");
     try {
       const send_object = {
         policy_name: state?.policy_name,
@@ -438,10 +454,35 @@ const AttendancePolicy = () => {
           };
         }),
       };
-      const resp = await apiClient.update(`/resource/Attendance Policies/${state?.updated_name}`, send_object);  
-      console.log(resp, "resp");
+
+      // Check if policy name has changed - if so, use rename API first
+      if (state?.updated_name !== state?.policy_name) {
+        console.log("Policy name changed, renaming document...");
+        const renameResp = await apiClient.post(`/method/frappe.rename_doc`, {
+          doctype: "Attendance Policies",
+          old: state?.updated_name,
+          new: state?.policy_name
+        });
+        console.log("Rename response:", renameResp);
+      }
+
+      // Update other fields using standard PUT API
+      const resp = await apiClient.update(`/resource/Attendance Policies/${state?.policy_name}`, send_object);  
+      console.log("Update response:", resp);
       toast.success("Policy updated successfully");
-      window.location.reload();
+      
+      // Close the view dialog and refresh data without full page reload
+      setState({ 
+        view_dialog: false,
+        AbsentPolicy: [],
+        Policy: [],
+        policy_name: "",
+        policy_type: "",
+        no_of_excuse: "",
+        updated_name: ""
+      });
+      await fetchAttendancePolicies();
+      await fetchFormOptions();
     } catch (error) {
       console.error("Error updating policy:", error);
       toast.error("Failed to update policy");
@@ -458,7 +499,9 @@ const AttendancePolicy = () => {
       const resp = await apiClient.delete(`resource/Attendance Policies/${row.id}`); 
       console.log(resp, "resp");
       toast.success("Policy deleted successfully");
-      window.location.reload();
+      // Refresh data without full page reload
+      await fetchAttendancePolicies();
+      await fetchFormOptions();
     } catch (error) {
       console.error("Error deleting policy:", error);
       toast.error("Failed to delete policy");
@@ -499,20 +542,35 @@ const AttendancePolicy = () => {
           </h1>
           <div className="flex gap-2">
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                fetchAttendancePolicies();
+                fetchFormOptions();
+              }}
               className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
               Refresh
             </button>
-            <Button
-              icon={faPlus}
-              variant="secondary"
-              onClick={() => {
-                // setIsModalOpen(true);
-                setState({ employee_dialog: true });
-                // addRow();
-              }}
-            >
+             <Button
+               icon={faPlus}
+               variant="secondary"
+               onClick={() => {
+                 setState({ 
+                   employee_dialog: true,
+                   policy_name: "",
+                   policy_type: "",
+                   no_of_excuse: "",
+                   policy_id: "",
+                   calculation_basis: "",
+                   Policy: [],
+                   AbsentPolicy: [{
+                     id: 1,
+                     period_type: "00:00",
+                     policy_count: 0,
+                     absent_count: 0,
+                   }]
+                 });
+               }}
+             >
               New
             </Button>
           </div>
@@ -525,11 +583,25 @@ const AttendancePolicy = () => {
           <DataTable columns={columns} data={policies} />
         )}
       </div>
-      <MuiDialog
-        open={state?.employee_dialog}
-        onClose={() => {
-          setState({ employee_dialog: false });
-        }}
+       <MuiDialog
+         open={state?.employee_dialog}
+         onClose={() => {
+           setState({ 
+             employee_dialog: false,
+             policy_name: "",
+             policy_type: "",
+             no_of_excuse: "",
+             policy_id: "",
+             calculation_basis: "",
+             Policy: [],
+             AbsentPolicy: [{
+               id: 1,
+               period_type: "00:00",
+               policy_count: 0,
+               absent_count: 0,
+             }]
+           });
+         }}
         multiple_btn={true}
         title="Employee Profile"
         // description="This action cannot be undone. Are/ ou sure?"

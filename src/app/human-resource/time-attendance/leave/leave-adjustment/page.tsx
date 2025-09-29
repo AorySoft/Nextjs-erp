@@ -465,7 +465,7 @@ const LeaveAdjustment = () => {
       console.log("update_object", send_object)
       console.log("editingRecordId", state.editingRecordId)
 
-      const response = await apiClient.patch(`/resource/Leave Adjustment/${state.editingRecordId}`, send_object);
+      const response = await apiClient.update(`/resource/Leave Adjustment/${state.editingRecordId}`, send_object);
       console.log("update response", response)
       console.log("Leave Adjustment updated successfully")
       toast.success("Leave Adjustment updated successfully")
