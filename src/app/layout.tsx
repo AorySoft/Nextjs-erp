@@ -39,3 +39,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+// sider header footer breadcrumb yaha banana tha {children}
