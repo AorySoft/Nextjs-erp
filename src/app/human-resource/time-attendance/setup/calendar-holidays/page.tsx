@@ -7,6 +7,7 @@ import { Edit, Trash, Plus, ChevronDown, SquareUserRound ,Settings } from "lucid
 import { defaultColor } from "@/utils/constant"
 import { toast } from "react-toastify"
 import { Accordion, AccordionSummary, AccordionDetails, Typography, Button, Checkbox } from "@mui/material"
+import request from "@/services/apiClient"
 import CustomTextField from "@/components/ui/CustomTextField"
 import CustomSelectField from "@/components/ui/CustomSelectField"
 import MuiDialog from "@/components/ui/DialogBox"
@@ -42,6 +43,12 @@ const CalendarHolidayPage = () => {
     selected_holiday: null,
     selected_holiday_period: null,
     selected_holiday_period_index: null,
+    new_holiday_date: "",
+    new_holiday_description: "",
+    holiday_list_from_date: "",
+    holiday_list_to_date: "",
+    selected_rows: {},
+    selected_holiday_period_rows: {},
     new_holiday_name: "",
     new_holiday_list_name: "",
     new_from_date: "",
@@ -198,6 +205,95 @@ const CalendarHolidayPage = () => {
     })
   }
 
+  // Bulk create Holiday rows from selected holiday periods
+  const handleBulkCreateHolidays = async () => {
+    try {
+      if (!selectedHoliday?.name) {
+        toast.error("Open a holiday list first")
+        return
+      }
+
+      const selectedMap = state.selected_holiday_period_rows || {}
+      const selectedKeys = Object.keys(selectedMap).filter((k) => selectedMap[k])
+      if (selectedKeys.length === 0) {
+        toast.error("Please select at least one holiday row")
+        return
+      }
+
+      const rows = (state.holiday_periods || []).filter((r: any) => selectedKeys.includes(r.id || r.name))
+      if (rows.length === 0) {
+        toast.error("Selected rows not found")
+        return
+      }
+
+      // Validate against from/to range if available
+      const parseDate = (val: string) => {
+        if (!val) return null as Date | null
+        // supports YYYY-MM-DD and DD-MM-YYYY
+        if (/^\d{4}-\d{2}-\d{2}$/.test(val)) {
+          // Force UTC midnight to avoid timezone shifting
+          return new Date(`${val}T00:00:00Z`)
+        }
+        if (/^\d{2}-\d{2}-\d{4}$/.test(val)) {
+          const [dd, mm, yyyy] = val.split('-')
+          return new Date(`${yyyy}-${mm}-${dd}T00:00:00Z`)
+        }
+        const d = new Date(val)
+        return isNaN(d.getTime()) ? null : d
+      }
+
+      const from = parseDate(state.holiday_list_from_date)
+      const to = parseDate(state.holiday_list_to_date)
+
+      const inRange = (dStr: string) => {
+        if (!from || !to) return true
+        const d = parseDate(dStr)
+        if (!d) return false
+        return d >= from && d <= to
+      }
+
+      const tasks = rows.map((row: any) => ({
+        row,
+        valid: inRange(row.holiday_date),
+      }))
+
+      const invalid = tasks.filter((t: { row: any; valid: boolean }) => !t.valid)
+      if (invalid.length > 0) {
+        const invalidDates = invalid.map((t: { row: any }) => t.row.holiday_date).join(', ')
+        toast.error(`Out of range: ${invalidDates}. Adjust list range or deselect.`)
+        return
+      }
+
+      const payloads = tasks.map(({ row }: { row: any; valid: boolean }) => ({
+        parent: selectedHoliday.name,
+        parentfield: "holidays",
+        parenttype: "Holiday List",
+        holiday_date: row.holiday_date,
+        description: row.description || "",
+      }))
+
+      const results = await Promise.allSettled(payloads.map((p: any) => request.post("/resource/Holiday", p)))
+      const failed = results.filter((r) => r.status === 'rejected').length
+      if (failed > 0) {
+        toast.error(`${failed} holiday(s) failed to create`)
+      }
+
+      const success = results.length - failed
+      if (success > 0) {
+        toast.success(`${success} holiday(s) created`)
+      }
+
+      // Clear selection and refresh periods
+      setState({ selected_holiday_period_rows: {} })
+      await loadHolidayPeriods(selectedHoliday.name)
+    } catch (error) {
+      console.error("Bulk create holidays error:", error)
+      toast.error("Failed to create selected holidays")
+    }
+  }
+
+  
+
   const handleSelectionToggle = (id: string) => {
     const stateKey =
       state.selection_type === "Department"
@@ -210,6 +306,34 @@ const CalendarHolidayPage = () => {
       [stateKey]: state[stateKey].map((item: SelectionItem) =>
         item.id === id ? { ...item, selected: !item.selected } : item,
       ),
+    })
+  }
+
+  const isRowSelected = (row: CalendarHoliday) => {
+    return Boolean(state.selected_rows?.[row.name])
+  }
+
+  const toggleRowSelection = (row: CalendarHoliday) => {
+    setState({
+      selected_rows: {
+        ...(state.selected_rows || {}),
+        [row.name]: !Boolean(state.selected_rows?.[row.name])
+      }
+    })
+  }
+
+  const isHolidayPeriodSelected = (row: any) => {
+    const key = row.id || row.name
+    return Boolean(state.selected_holiday_period_rows?.[key])
+  }
+
+  const toggleHolidayPeriodSelection = (row: any) => {
+    const key = row.id || row.name
+    setState({
+      selected_holiday_period_rows: {
+        ...(state.selected_holiday_period_rows || {}),
+        [key]: !Boolean(state.selected_holiday_period_rows?.[key])
+      }
     })
   }
 
@@ -307,7 +431,11 @@ const CalendarHolidayPage = () => {
           weekly_off: holiday.weekly_off
         }))
         
-        setState({ holiday_periods: holidayPeriods })
+        setState({ 
+          holiday_periods: holidayPeriods,
+          holiday_list_from_date: result.data.from_date || "",
+          holiday_list_to_date: result.data.to_date || ""
+        })
         console.log("✅ Holiday periods loaded:", holidayPeriods)
       } else {
         setState({ holiday_periods: [] })
@@ -382,7 +510,7 @@ const CalendarHolidayPage = () => {
     })
   }
 
-  const handleCreateNewHoliday = async () => {
+  const createNewHolidayList = async (closeAfter: boolean) => {
     if (!state.new_holiday_list_name.trim()) {
       toast.error("Please enter a holiday list name")
       return
@@ -418,12 +546,52 @@ const CalendarHolidayPage = () => {
       }
       
       toast.success("Holiday list created successfully")
-      setState({ 
-        new_holiday_dialog: false, 
-        new_holiday_list_name: "", 
-        new_from_date: "", 
-        new_to_date: "" 
-      })
+
+      // Create first Holiday row after list creation if provided
+      if (state.new_holiday_date && state.new_holiday_description?.trim()) {
+        const parseDate = (val: string) => {
+          if (!val) return null as Date | null
+          if (/^\d{4}-\d{2}-\d{2}$/.test(val)) return new Date(`${val}T00:00:00Z`)
+          if (/^\d{2}-\d{2}-\d{4}$/.test(val)) {
+            const [dd, mm, yyyy] = val.split('-')
+            return new Date(`${yyyy}-${mm}-${dd}T00:00:00Z`)
+          }
+          const d = new Date(val)
+          return isNaN(d.getTime()) ? null : d
+        }
+        const from = parseDate(state.new_from_date)
+        const to = parseDate(state.new_to_date)
+        const hd = parseDate(state.new_holiday_date)
+        if (from && to && hd && (hd < from || hd > to)) {
+          toast.error(`Holiday Date must be between ${state.new_from_date} and ${state.new_to_date}`)
+        } else {
+          try {
+            const parentId = result.data?.name
+            const payload = {
+              parent: parentId,
+              parentfield: "holidays",
+              parenttype: "Holiday List",
+              holiday_date: state.new_holiday_date,
+              description: state.new_holiday_description,
+            }
+            await request.post('/resource/Holiday', payload)
+            toast.success('First holiday added')
+          } catch (e) {
+            console.error('Error adding first holiday:', e)
+            toast.error('Holiday list created, but failed to add first holiday')
+          }
+        }
+      }
+      if (closeAfter) {
+        setState({ 
+          new_holiday_dialog: false, 
+          new_holiday_list_name: "", 
+          new_from_date: "", 
+          new_to_date: "",
+          new_holiday_date: "",
+          new_holiday_description: "" 
+        })
+      }
       
       // Refetch the data to get updated information from server
       await fetchCalendarHolidays()
@@ -431,6 +599,11 @@ const CalendarHolidayPage = () => {
       console.error("Error creating holiday list:", error)
       toast.error("Failed to create holiday list")
     }
+  }
+
+  // Backwards compatibility handler (used by body buttons earlier)
+  const handleCreateNewHoliday = async () => {
+    await createNewHolidayList(true)
   }
 
   const handleHolidayPeriodEdit = (period: any, index: number) => {
@@ -459,10 +632,11 @@ const CalendarHolidayPage = () => {
         return
       }
       
-      const response = await fetch(`/api/holiday-periods/${holidayId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/resource/Holiday/${holidayId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `token ${process.env.NEXT_PUBLIC_ERP_TOKEN}`,
         },
         body: JSON.stringify({
           description: state.holiday_period_description
@@ -553,7 +727,8 @@ const CalendarHolidayPage = () => {
       render: (row: unknown, index: number) => {
         const holiday = row as CalendarHoliday
         return (
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          
             <Trash size={16} color={defaultColor?.main_blue} onClick={() => handleDeleteClick(holiday)} />
             <Edit size={16} color={defaultColor?.main_blue} onClick={() =>  handleEdit(holiday) } />
             <SquareUserRound size={16} color={defaultColor?.main_blue} onClick={() =>{}} />
@@ -665,6 +840,37 @@ const CalendarHolidayPage = () => {
         await fetchCalendarHolidays()
       }
 
+      // If inline Add Holiday fields are filled, validate date range and create the Holiday item now
+      if (selectedHoliday?.name && state.new_holiday_date && state.new_holiday_description.trim()) {
+        try {
+          const from = state.holiday_list_from_date
+          const to = state.holiday_list_to_date
+          if (from && to) {
+            const d = new Date(state.new_holiday_date)
+            const df = new Date(from)
+            const dt = new Date(to)
+            if (d < df || d > dt) {
+              toast.error(`Holiday Date must be between ${from} and ${to}`)
+              return
+            }
+          }
+          const payload = {
+            parent: selectedHoliday.name,
+            parentfield: "holidays",
+            parenttype: "Holiday List",
+            holiday_date: state.new_holiday_date,
+            description: state.new_holiday_description,
+          }
+          await request.post("/resource/Holiday", payload)
+          toast.success("Holiday added")
+          setState({ new_holiday_date: "", new_holiday_description: "" })
+          await loadHolidayPeriods(selectedHoliday.name)
+        } catch (err) {
+          console.error("Error adding holiday:", err)
+          toast.error("Failed to add holiday")
+        }
+      }
+
       setState({ holiday_dialog: false })
       setSelectedHoliday(undefined)
     } catch (error) {
@@ -713,6 +919,36 @@ const CalendarHolidayPage = () => {
           <div id="calendar-holiday-parent">
             <Accordion defaultExpanded>
               <AccordionSummary expandIcon={<ChevronDown />} sx={{ backgroundColor: defaultColor.main_grey }}>
+                <Typography fontWeight={600}>Add Holiday</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <div className="grid grid-cols-12 gap-4">
+                  <div className="col-span-12">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Holiday Date *</label>
+                    <input
+                      type="date"
+                      value={state.new_holiday_date}
+                      min={state.holiday_list_from_date || undefined}
+                      max={state.holiday_list_to_date || undefined}
+                      onChange={(e) => setState({ new_holiday_date: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="col-span-12">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                    <input
+                      type="text"
+                      value={state.new_holiday_description}
+                      onChange={(e) => setState({ new_holiday_description: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter holiday description"
+                    />
+                  </div>
+                </div>
+              </AccordionDetails>
+            </Accordion>
+            <Accordion defaultExpanded>
+              <AccordionSummary expandIcon={<ChevronDown />} sx={{ backgroundColor: defaultColor.main_grey }}>
                 <Typography fontWeight={600}>Basic Information</Typography>
               </AccordionSummary>
               <AccordionDetails>
@@ -747,8 +983,8 @@ const CalendarHolidayPage = () => {
                   <div className="col-span-12 md:col-span-2">
   <Button
     variant="contained"
-    onClick={handleApplyOnClick}
-    disabled={!state.apply_on}
+    onClick={handleBulkCreateHolidays}
+    disabled={!state.selected_holiday_period_rows || Object.values(state.selected_holiday_period_rows).filter(Boolean).length === 0}
     startIcon={<Settings  size={16} />}
     sx={{ width: "100%", height: "40px", textTransform: "none" }}
   >
@@ -780,7 +1016,11 @@ const CalendarHolidayPage = () => {
                         state.holiday_periods.map((row: any, index: number) => (
                           <tr key={index} className="hover:bg-gray-50">
                               <td className="p-3 border border-gray-300 text-center">
-                                <div className="flex gap-2 justify-center">
+                                <div className="flex gap-2 justify-center items-center">
+                                  <Checkbox
+                                    checked={isHolidayPeriodSelected(row)}
+                                    onChange={() => toggleHolidayPeriodSelection(row)}
+                                  />
                                   <button 
                                     className="p-1 hover:bg-gray-100 rounded transition-colors"
                                     onClick={() => handleHolidayPeriodEdit(row, index)}
@@ -989,10 +1229,20 @@ const CalendarHolidayPage = () => {
         {/* New Holiday List Modal */}
         <MuiDialog 
           open={state?.new_holiday_dialog} 
-          multiple_btn={false}
+          multiple_btn={true}
           title="Create New Holiday List"
           description={false}
-          maxWidth="sm"
+          maxWidth="lg"
+          onSave={() => createNewHolidayList(false)}
+          onSaveAndClose={() => createNewHolidayList(true)}
+          onCloseClick={() => setState({ 
+            new_holiday_dialog: false, 
+            new_holiday_list_name: "", 
+            new_from_date: "", 
+            new_to_date: "",
+            new_holiday_date: "",
+            new_holiday_description: "" 
+          })}
           onClose={() => setState({ 
             new_holiday_dialog: false, 
             new_holiday_list_name: "", 
@@ -1001,73 +1251,77 @@ const CalendarHolidayPage = () => {
           })}
         >
           <div className="p-4">
-            {/* Title */}
-            <h2 className="text-lg font-semibold text-gray-800 mb-4">
-              Create New Holiday List
-            </h2>
-        
-            {/* Holiday List Name */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Holiday List Name *
-              </label>
-              <input
-                type="text"
-                value={state.new_holiday_list_name}
-                onChange={(e) => setState({ new_holiday_list_name: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter holiday list name"
-                autoFocus
-              />
-            </div>
+            {/* First accordion: Basic Information (Name, From, To) */}
+            <Accordion defaultExpanded>
+              <AccordionSummary expandIcon={<ChevronDown />} sx={{ backgroundColor: defaultColor.main_grey }}>
+                <Typography fontWeight={600}>Basic Information</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <div className="grid grid-cols-12 gap-4">
+                  <div className="col-span-12">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Holiday List Name *</label>
+                    <input
+                      type="text"
+                      value={state.new_holiday_list_name}
+                      onChange={(e) => setState({ new_holiday_list_name: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter holiday list name"
+                    />
+                  </div>
+                  <div className="col-span-12">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">From Date *</label>
+                    <input
+                      type="date"
+                      value={state.new_from_date}
+                      onChange={(e) => setState({ new_from_date: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="col-span-12">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">To Date *</label>
+                    <input
+                      type="date"
+                      value={state.new_to_date}
+                      onChange={(e) => setState({ new_to_date: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="col-span-12" />
+                </div>
+              </AccordionDetails>
+            </Accordion>
 
-            {/* From Date */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                From Date *
-              </label>
-              <input
-                type="date"
-                value={state.new_from_date}
-                onChange={(e) => setState({ new_from_date: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-
-            {/* To Date */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                To Date *
-              </label>
-              <input
-                type="date"
-                value={state.new_to_date}
-                onChange={(e) => setState({ new_to_date: e.target.value })}
-                className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-        
-            {/* Actions */}
-            <div className="flex justify-end gap-3">
-              <button
-                className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-100"
-                onClick={() => setState({ 
-                  new_holiday_dialog: false, 
-                  new_holiday_list_name: "", 
-                  new_from_date: "", 
-                  new_to_date: "" 
-                })}
-              >
-                Cancel
-              </button>
-        
-              <button
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                onClick={handleCreateNewHoliday}
-              >
-                Create
-              </button>
-            </div>
+            {/* Second accordion: Add Holiday (optional) */}
+            <Accordion defaultExpanded>
+              <AccordionSummary expandIcon={<ChevronDown />} sx={{ backgroundColor: defaultColor.main_grey }}>
+                <Typography fontWeight={600}>Add Holiday</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <div className="grid grid-cols-12 gap-4">
+                  <div className="col-span-12">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Holiday Date *</label>
+                    <input
+                      type="date"
+                      value={state.new_holiday_date || ''}
+                      min={state.new_from_date || undefined}
+                      max={state.new_to_date || undefined}
+                      onChange={(e) => setState({ new_holiday_date: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="col-span-12">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description *</label>
+                    <input
+                      type="text"
+                      value={state.new_holiday_description || ''}
+                      onChange={(e) => setState({ new_holiday_description: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter holiday description"
+                    />
+                  </div>
+                </div>
+              </AccordionDetails>
+            </Accordion>
           </div>
         </MuiDialog>
 
