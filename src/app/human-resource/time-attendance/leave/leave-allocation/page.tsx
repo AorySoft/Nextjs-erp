@@ -15,6 +15,7 @@ import MuiDialog from "@/components/ui/DialogBox"
 import CustomTextField from "@/components/ui/CustomTextField"
 import CustomDateInputField from "@/components/ui/DatePicker"
 import CustomSelectField from "@/components/ui/CustomSelectField"
+import CustomMultiSelectField from "@/components/ui/CustomMultiSelectField"
 import { defaultColor } from "@/utils/constant"
 import apiClient from "@/services/apiClient";
 import request from "@/services/apiClient";
@@ -173,19 +174,15 @@ const initialQuotaState = {
                 })
               }
             />
-  
-            <CustomSelectField
-              label="Employee"
-              value={state.employee_name}
-              options={state?.emp_options?.map((item: any) => ({
-                label: item.employee_name,
+
+            <CustomMultiSelectField
+              label="Employees"
+              options={(state?.emp_options ?? []).map((item: any) => ({
                 value: item.name,
+                label: `${item.employee_name} (${item.name})`,
               }))}
-              onChange={(e) =>
-                setState({
-                  employee_name: e.target.value,
-                })
-              }
+              value={state.selected_employees ?? []}
+              onChange={(values) => setState({ selected_employees: values })}
             />
   
             <CustomTextField
@@ -586,12 +583,12 @@ const getAll = async () => {
 // create function
 const createAllocation= async()=>{
 try {
-  if(!state?.employee_name || !state?.leave_type || !state?.leave_group || !state?.transaction_date_from || !state?.transaction_date_to || !state?.new_leaves_allocated){
+  if(!state?.selected_employees || state?.selected_employees?.length === 0 || !state?.leave_type || !state?.leave_group || !state?.transaction_date_from || !state?.transaction_date_to || !state?.new_leaves_allocated){
     toast.error("Please fill all the fields")
     return
   }
   const send_payload={
-    "employees": [state?.employee_name],
+    "employees": state?.selected_employees,
     "leave_type": state?.leave_type,
     "leave_group" : state?.leave_group,
     "from_date": state?.transaction_date_from,
