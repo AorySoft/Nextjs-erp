@@ -29,7 +29,9 @@ const HolidayTypePage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const response = await apiClient.get('/resource/Shift Type?fields=["name","custom_shift_name", "start_time", "end_time" ]&limit_page_length=0');
+      const response = await apiClient.get<{ data: ShiftTypeData[] }>(
+        '/resource/Shift Type?fields=["name","custom_shift_name", "start_time", "end_time" ]&limit_page_length=0'
+      );
       
       if (response && Array.isArray(response.data)) {
         const transformedData: ShiftTypeData[] = response.data.map((shift: any, index: number) => ({
