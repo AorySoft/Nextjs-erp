@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useReducer } from "react";
+import React, { useState, useEffect, useReducer, useCallback } from "react";
 import DashboardLayout from "@/components/shared/DashboardLayout";
 import DataTable from "@/components/ui/DataTable";
 import EmployeeProfileModal from "@/components/ui/EmployeeProfileModal";
@@ -184,8 +184,9 @@ const EmployeeProfile = () => {
         {
           input_name: "custom_cnic",
           input_label: "CNIC",
-          placeholder: "Enter CNIC",
+          placeholder: "XXXXX-XXXXXXX-X",
           type: "text",
+          maxLength: 15,
           required: true,
           startIcon: <></>,
           grid_size: 4,
@@ -258,8 +259,9 @@ const EmployeeProfile = () => {
         {
           input_name: "contact_no",
           input_label: "Contact No",
-          placeholder: "Enter contact no",
+          placeholder: "03XXXXXXXXX",
           type: "text",
+          maxLength: 11,
           required: true,
           startIcon: <></>,
           grid_size: 4,
@@ -577,8 +579,73 @@ const EmployeeProfile = () => {
     }
     return true; // all good
   };
+  // Format CNIC as user types (XXXXX-XXXXXXX-X)
+  const formatCNIC = (value: string) => {
+    // Remove all non-digit characters
+    const cnic = value.replace(/\D/g, '');
+    
+    // Format as XXXXX-XXXXXXX-X
+    if (cnic.length <= 5) return cnic;
+    if (cnic.length <= 12) return `${cnic.slice(0, 5)}-${cnic.slice(5)}`;
+    return `${cnic.slice(0, 5)}-${cnic.slice(5, 12)}-${cnic.slice(12, 13)}`;
+  };
+
+  // Validate CNIC format (XXXXX-XXXXXXX-X)
+  const validateCNIC = (cnic: string) => {
+    const cnicRegex = /^\d{5}-\d{7}-\d{1}$/;
+    return cnicRegex.test(cnic);
+  };
+
+  // Format contact number as 03XXXXXXXXX
+  const formatContactNumber = (value: string) => {
+    // Remove all non-digit characters
+    const numbers = value.replace(/\D/g, '');
+    
+    // If it starts with 0, keep it as is (max 11 digits)
+    if (numbers.startsWith('0')) {
+      return numbers.slice(0, 11);
+    }
+    // If it doesn't start with 0, add 0 and limit to 11 digits
+    return `0${numbers}`.slice(0, 11);
+  };
+
+  // Validate contact number format (03XXXXXXXXX)
+  const validateContactNumber = (contact: string) => {
+    const contactRegex = /^03\d{9}$/;
+    return contactRegex.test(contact);
+  };
+
+  // Handle CNIC input change with formatting
+  const handleCNICChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatCNIC(e.target.value);
+    setState({
+      ...state,
+      custom_cnic: formattedValue,
+    });
+  };
+
+  // Handle contact number input change with formatting
+  const handleContactChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedValue = formatContactNumber(e.target.value);
+    setState({
+      ...state,
+      contact_no: formattedValue,
+    });
+  };
+
   // create employee function
   const handleCreateEmployee = async () => {
+    // Validate CNIC format before submission
+    if (state.custom_cnic && !validateCNIC(state.custom_cnic)) {
+      toast.error("Please enter a valid CNIC in the format XXXXX-XXXXXXX-X");
+      return;
+    }
+
+    // Validate contact number format before submission
+    if (state.contact_no && !validateContactNumber(state.contact_no)) {
+      toast.error("Please enter a valid contact number in the format 03XXXXXXXXX");
+      return;
+    }
     try {
       const isValid_1 = validateForm(state?.formFields, state);
       if (!isValid_1) return;
@@ -850,16 +917,22 @@ const EmployeeProfile = () => {
                             />
                           ) : (
                             <CustomTextField
-                              input_value={state[field.input_name]}
-                              onchange={(
-                                e: React.ChangeEvent<
-                                  HTMLInputElement | HTMLTextAreaElement
-                                >
-                              ) =>
-                                setState({
-                                  ...state,
-                                  [field.input_name]: e.target.value,
-                                })
+                              input_value={field.input_name === 'custom_cnic' 
+                                ? formatCNIC(state[field.input_name] || '')
+                                : state[field.input_name]}
+                              onchange={
+                                field.input_name === 'custom_cnic'
+                                  ? (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => 
+                                      handleCNICChange(e as React.ChangeEvent<HTMLInputElement>)
+                                  : field.input_name === 'contact_no'
+                                  ? (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => 
+                                      handleContactChange(e as React.ChangeEvent<HTMLInputElement>)
+                                  : (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                                      setState({
+                                        ...state,
+                                        [field.input_name]: e.target.value,
+                                      });
+                                    }
                               }
                               required
                               input_name={field.input_name}
@@ -931,16 +1004,22 @@ const EmployeeProfile = () => {
                             />
                           ) : (
                             <CustomTextField
-                              input_value={state[field.input_name]}
-                              onchange={(
-                                e: React.ChangeEvent<
-                                  HTMLInputElement | HTMLTextAreaElement
-                                >
-                              ) =>
-                                setState({
-                                  ...state,
-                                  [field.input_name]: e.target.value,
-                                })
+                              input_value={field.input_name === 'custom_cnic' 
+                                ? formatCNIC(state[field.input_name] || '')
+                                : state[field.input_name]}
+                              onchange={
+                                field.input_name === 'custom_cnic'
+                                  ? (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => 
+                                      handleCNICChange(e as React.ChangeEvent<HTMLInputElement>)
+                                  : field.input_name === 'contact_no'
+                                  ? (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => 
+                                      handleContactChange(e as React.ChangeEvent<HTMLInputElement>)
+                                  : (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+                                      setState({
+                                        ...state,
+                                        [field.input_name]: e.target.value,
+                                      });
+                                    }
                               }
                               required
                               input_name={field.input_name}

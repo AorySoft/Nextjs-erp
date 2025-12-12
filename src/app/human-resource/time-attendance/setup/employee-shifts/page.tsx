@@ -559,28 +559,19 @@ const TestPage = () => {
     },
     {
       key: "name",
-      label: "Name",
+      label: "ID",
       searchable: true,
     },
     {
       key: "custom_shift_name",
-      label: "Custom Shift Name",
+      label: "Shift Name",
       searchable: true,
       render: (row: unknown) => {
         const shift = row as ShiftType
         return shift.custom_shift_name || "N/A"
       },
     },
-    {
-      key: "start_time",
-      label: "Start Time",
-      searchable: true,
-    },
-    {
-      key: "end_time",
-      label: "End Time",
-      searchable: true,
-    },
+   
   ]
 
   return (

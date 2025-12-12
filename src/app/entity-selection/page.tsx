@@ -28,14 +28,20 @@ const EntitySelectionPage = () => {
       setIsLoading(true);
       const result = await fetchEntities();
       
-      if (result.success && result.data) {
-        setBranches(result.data);
-        // Set default selection to first branch if available
-        if (result.data.length > 0) {
-          setSelectedEntity(result.data[0].name); // Use name as the unique ID
+      if (result.success) {
+        if (result.data && result.data.length > 0) {
+          setBranches(result.data);
+          // Set the first item as selected
+          setSelectedEntity(result.data[0].name);
+        } else {
+          // No data available
+          setSelectedEntity("");
+          setError("No entities available");
+          toast.error("No entities available");
         }
       } else {
-        const errorMessage = result.error || "No entities available";
+        // Handle API error
+        const errorMessage = result.error || "Failed to load entities";
         setError(errorMessage);
         toast.error(errorMessage);
       }
@@ -155,7 +161,6 @@ const EntitySelectionPage = () => {
                     onChange={(e) => setSelectedEntity(e.target.value)}
                     className="w-full pl-12 pr-12 py-1 sm:py-1 border-2 border-[#2878aa] rounded-xl bg-white/80 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-[#2878aa] focus:border-[#2878aa] text-sm sm:text-base text-black appearance-none cursor-pointer"
                   >
-                    <option value="">Select Your Entity</option>
                     {branches.map((branch) => (
                       <option key={branch.name} value={branch.name}>
                         {branch.branch || branch.name}
