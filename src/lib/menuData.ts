@@ -70,7 +70,7 @@ export const timeAttendanceSection: MenuSection = {
         { label: 'Monthly Attendance Process', isFavorite: false },
         { label: 'Daily Attendance Data', isFavorite: false },
         { label: 'Monthly Attendance Data', isFavorite: false },
-        { label: 'Daily Attendance Data', isFavorite: false }
+        { label: 'Daily Attendance Data', isFavorite: false,href:'/human-resource/time-attendance/process/daily-attendance-data' }
       ]
     }
   ]

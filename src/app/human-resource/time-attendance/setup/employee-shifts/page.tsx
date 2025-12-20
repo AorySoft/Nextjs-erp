@@ -8,16 +8,18 @@ import { Accordion, AccordionSummary, AccordionDetails, Typography, Button, Chec
 import CustomTextField from "@/components/ui/CustomTextField"
 import CustomSelectField from "@/components/ui/CustomSelectField"
 import MuiDialog from "@/components/ui/DialogBox"
+import apiClient from '@/services/apiClient';
 
 interface ShiftType {
   name: string
-  custom_shift_name: string | null
+  shift_group_name: string | null
   start_time: string
   end_time: string
 }
 
 interface ScheduleItem {
   id: string
+  day: string
   in_time: string
   out_time: string
   duration: number
@@ -29,6 +31,17 @@ interface ScheduleItem {
 const TestPage = () => {
   const [shiftTypes, setShiftTypes] = useState<ShiftType[]>([])
   const [loading, setLoading] = useState(false)
+// Admin-test
+// cATIU4ih30LwwJ/
+  const defaultSelectedDays: Record<string, boolean> = {
+    monday: false,
+    tuesday: false,
+    wednesday: false,
+    thursday: false,
+    friday: false,
+    saturday: false,
+    sunday: false,
+  }
 
   const [state, setState] = useReducer((state: any, newState: any) => ({ ...state, ...newState }), {
     modal_open: false,
@@ -37,20 +50,8 @@ const TestPage = () => {
     editingId: null,
     name: "",
     custom_shift_name: "",
-    start_time: "",
-    end_time: "",
-    custom_late_arrival_policy: "",
-    custom_early_departure_policy: "",
-    holiday_periods: [],
-    selectedDays: {
-      monday: true,
-      tuesday: false    ,
-      wednesday: false,
-      thursday: false,
-      friday: false,
-      saturday: false,
-      sunday: false,
-    } as Record<string, boolean>,
+    employee: "",
+    selectedDays: defaultSelectedDays,
     schedules: [],
     employees: [],
     scheduleForm: {
@@ -71,66 +72,13 @@ const TestPage = () => {
     },
     formFields: [
       {
-        input_name: "name",
-        input_label: "Name",
-        placeholder: "Enter Shift Name",
+        input_name: "shift_group_name",
+        input_label: "Shift Group Name",
+        placeholder: "Enter Shift Group Name",
         type: "text",
         required: true,
         grid_size: 6,
         isDisable: false,
-      },
-      {
-        input_name: "custom_shift_name",
-        input_label: "Custom Shift Name",
-        placeholder: "Enter Custom Shift Name",
-        type: "text",
-        required: true,
-        grid_size: 6,
-        isDisable: false,
-      },
-      {
-        input_name: "start_time",
-        input_label: "Start Time",
-        placeholder: "Select Start Time",
-        type: "time",
-        required: true,
-        grid_size: 6,
-        isDisable: false,
-      },
-      {
-        input_name: "end_time",
-        input_label: "End Time",
-        placeholder: "Select End Time",
-        type: "time",
-        required: true,
-        grid_size: 6,
-        isDisable: false,
-      },
-      {
-        input_name: "custom_late_arrival_policy",
-        input_label: "Late Arrival Policy",
-        placeholder: "Select Late Arrival Policy",
-        type: "select",
-        required: true,
-        grid_size: 6,
-        options: [
-          { label: "Late Arrival Policy (5 mins grace)", value: "Late Arrival Policy (5 mins grace)" },
-          { label: "Late Arrival Policy (10 mins grace)", value: "Late Arrival Policy (10 mins grace)" },
-          { label: "No Grace Period", value: "No Grace Period" },
-        ],
-      },
-      {
-        input_name: "custom_early_departure_policy",
-        input_label: "Early Departure Policy",
-        placeholder: "Select Early Departure Policy",
-        type: "select",
-        required: true,
-        grid_size: 6,
-        options: [
-          { label: "Early Departure Policy", value: "Early Departure Policy" },
-          { label: "Flexible Departure", value: "Flexible Departure" },
-          { label: "Strict Departure", value: "Strict Departure" },
-        ],
       },
     ],
   })
@@ -143,22 +91,19 @@ const TestPage = () => {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://erp.thebenchmark.com.pk/api'
       const erpToken = process.env.NEXT_PUBLIC_ERP_TOKEN || '25e8251c3cbaf25:6bd816c6a21d16e'
       
-      const response = await fetch(`${apiUrl}/resource/Shift Type?fields=["name","custom_shift_name", "start_time", "end_time" ]&limit_page_length=0`, {
-        headers: {
-          'Authorization': `token ${erpToken}`,
-          'Content-Type': 'application/json',
-        }
-      })
+      // const response = await fetch(`${apiUrl}/resource/Shift Type?fields=["name","custom_shift_name", "start_time", "end_time" ]&limit_page_length=0`, {
+      //   headers: {
+      //     'Authorization': `token ${erpToken}`,
+      //     'Content-Type': 'application/json',
+      //   }
+      // })
+const response: any = await apiClient.get(`/resource/Shift Group?fields=["shift_group_name","name"]`);      
+     
       
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
       
-      const result = await response.json()
-      
-      if (result.data) {
-        setShiftTypes(result.data)
-        console.log("✅ Shift types fetched successfully:", result.data)
+      if (response.data) {
+        setShiftTypes(response.data)
+        console.log("✅ Shift types fetched successfully:", response.data)
         toast.success("Shift types loaded successfully")
       } else {
         setShiftTypes([])
@@ -177,125 +122,145 @@ const TestPage = () => {
     fetchShiftTypes()
   }, [])
 
+  useEffect(() => {
+    fetchEmployees()
+  }, [])
+
   const handleNewClick = () => {
     setState({
       modal_open: true,
       isEditing: false,
       editingId: null,
       name: "",
-      custom_shift_name: "",
-      start_time: "",
-      end_time: "",
-      custom_late_arrival_policy: "",
-      custom_early_departure_policy: "",
-      holiday_periods: [],
+      shift_group_name: "",
+      employee: "",
+      selectedDays: defaultSelectedDays,
+      schedules: [],
     })
   }
 
   const handleSave = async () => {
     try {
       // Validate required fields
-      if (!state.name.trim()) {
-        toast.error("Please enter shift name")
-        return
-      }
-      if (!state.custom_shift_name.trim()) {
-        toast.error("Please enter custom shift name")
-        return
-      }
-      if (!state.start_time) {
-        toast.error("Please select start time")
-        return
-      }
-      if (!state.end_time) {
-        toast.error("Please select end time")
-        return
-      }
-      if (!state.custom_late_arrival_policy) {
-        toast.error("Please select late arrival policy")
-        return
-      }
-      if (!state.custom_early_departure_policy) {
-        toast.error("Please select early departure policy")
+      if (!state.shift_group_name?.trim()) {
+        toast.error("Please enter shift group name")
         return
       }
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://erp.thebenchmark.com.pk/api'
-      const erpToken = process.env.NEXT_PUBLIC_ERP_TOKEN || '25e8251c3cbaf25:6bd816c6a21d16e'
+      if (!state.employee) {
+        toast.error("Please select an employee")
+        return
+      }
 
-      let response;
-      
+      const schedules = (state.schedules as ScheduleItem[]) || []
+
+      if (schedules.length === 0) {
+        toast.error("Please select at least one day")
+        return
+      }
+
+      setLoading(true)
+
+      const normalizeTime = (value: string) => {
+        if (!value) return value
+        const parts = value.split(":")
+        if (parts.length === 2) return `${value}:00`
+        return value
+      }
+
+      const daysPayload = (state.schedules as ScheduleItem[])
+        .map((s) => {
+          if (!s.day) {
+            throw new Error("Please select day")
+          }
+          if (!s.in_time) {
+            throw new Error(`Please select start time for ${s.day}`)
+          }
+          if (!s.out_time) {
+            throw new Error(`Please select end time for ${s.day}`)
+          }
+          if (!s.start_date) {
+            throw new Error(`Please select start date for ${s.day}`)
+          }
+          if (!s.end_date) {
+            throw new Error(`Please select end date for ${s.day}`)
+          }
+
+          // Validate time range (HH:MM) or (HH:MM:SS) lexicographically works
+          if (normalizeTime(s.in_time) >= normalizeTime(s.out_time)) {
+            throw new Error(`Start time must be before end time for ${s.day}`)
+          }
+
+          // Validate date range (YYYY-MM-DD lexicographically works)
+          if (s.start_date > s.end_date) {
+            throw new Error(`Start date must be before or equal to end date for ${s.day}`)
+          }
+
+          return {
+            day: s.day,
+            start_time: normalizeTime(s.in_time),
+            end_time: normalizeTime(s.out_time),
+            start_date: s.start_date,
+            end_date: s.end_date,
+          }
+        })
+
+      if (daysPayload.length === 0) {
+        toast.error("Please select at least one day")
+        return
+      }
+
+      const payload = {
+        shift_group_name: state.shift_group_name,
+        employee: state.employee,
+        days: daysPayload,
+      }
+
       if (state.isEditing && state.editingId) {
-        // Update existing shift type using PUT request
-        const requestBody = {
-          start_time: state.start_time,
-          end_time: state.end_time
-        }
-
-        response = await fetch(`${apiUrl}/resource/Shift Type/${state.editingId}`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `token ${erpToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody)
+        const result: any = await apiClient.post(`/method/update_shift_group`, {
+          script_name: "update_shift_group",
+          employee: state.employee,
+          shift_group_name: state.shift_group_name,
+          days: daysPayload,
         })
-
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-        }
-
-        const result = await response.json()
-        console.log("✅ Shift updated successfully:", result)
-        toast.success("Shift updated successfully")
+        console.log("✅ Shift group updated successfully:", result)
+        toast.success("Shift group updated successfully")
       } else {
-        // Create new shift type using POST request
-        const queryParams = new URLSearchParams({
-          start_time: state.start_time,
-          end_time: state.end_time,
-          enable_auto_attendance: '1',
-          name: state.name,
-          determine_check_in_and_check_out: 'Strictly based on Log Type in Employee Checkin',
-          auto_update_last_sync: '1',
-          custom_late_arrival_policy: state.custom_late_arrival_policy,
-          custom_early_departure_policy: state.custom_early_departure_policy
+        // Create parent Shift Group first
+        const createResult: any = await apiClient.post(`/resource/Shift Group`, {
+          shift_group_name: state.shift_group_name,
         })
 
-        const requestBody = {
-          custom_shift_name: state.custom_shift_name
-        }
-
-        response = await fetch(`${apiUrl}/resource/Shift Type?${queryParams.toString()}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `token ${erpToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBody)
+        // Then persist employee + days via method API (resource create may not write child table)
+        const updateResult: any = await apiClient.post(`/method/update_shift_group`, {
+          script_name: "update_shift_group",
+          employee: state.employee,
+          shift_group_name: state.shift_group_name,
+          days: daysPayload,
         })
 
-        if (!response.ok) {
-          const errorData = await response.json()
-          throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-        }
-
-        const result = await response.json()
-        console.log("✅ Shift created successfully:", result)
-        toast.success("Shift created successfully")
+        console.log("✅ Shift group created successfully:", createResult)
+        console.log("✅ Shift group days saved successfully:", updateResult)
+        toast.success("Shift group created successfully")
       }
 
       setState({ 
         modal_open: false,
         isEditing: false,
-        editingId: null
+        editingId: null,
+        shift_group_name: "",
+        employee: "",
+        selectedDays: defaultSelectedDays,
+        schedules: [],
       })
       
       // Refresh the shift types list
       await fetchShiftTypes()
     } catch (error) {
       console.error("Error saving shift:", error)
-      toast.error(`Failed to save shift: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      toast.error(`${error instanceof Error ? error.message : 'Failed to save shift'}`)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -327,19 +292,73 @@ const TestPage = () => {
     }
   }
 
-  const handleEditShiftType = (shiftType: ShiftType) => {
-    setState({
-      modal_open: true,
-      isEditing: true,
-      editingId: shiftType.name, // Using name as the ID for the API call
-      name: shiftType.name,
-      custom_shift_name: shiftType.custom_shift_name || "",
-      start_time: shiftType.start_time,
-      end_time: shiftType.end_time,
-      custom_late_arrival_policy: "",
-      custom_early_departure_policy: "",
-      holiday_periods: [],
-    })
+  const handleEditShiftType = async (shiftType: ShiftType) => {
+    try {
+      setLoading(true)
+
+      const response: any = await apiClient.get(`/resource/Shift Group/${shiftType.name}`)
+      const detail = response?.data
+
+      const shiftGroupName = detail?.shift_group_name || shiftType.shift_group_name || ""
+      const shiftTable = Array.isArray(detail?.shift_table) ? detail.shift_table : []
+
+      const parseDay = (shiftSchedule: string) => {
+        if (!shiftSchedule) return ""
+        const parts = shiftSchedule.split(" - ")
+        const last = parts[parts.length - 1]?.trim()
+        return last || ""
+      }
+
+      const formatTimeForInput = (value: string) => {
+        if (!value) return ""
+
+        // API might return: "8:00:00" or "08:00:00" or "08:00"
+        const parts = value.split(":")
+        if (parts.length < 2) return value
+
+        const hh = parts[0].padStart(2, "0")
+        const mm = parts[1].padStart(2, "0")
+
+        // <input type="time"> is safest with HH:MM
+        return `${hh}:${mm}`
+      }
+
+      const schedules: ScheduleItem[] = shiftTable.map((row: any) => ({
+        id: row.name,
+        day: parseDay(row.shift_schedule) || "",
+        in_time: formatTimeForInput(row.start_time || ""),
+        out_time: formatTimeForInput(row.end_time || ""),
+        duration: 0,
+        start_date: row.start_date || "",
+        end_date: row.end_date || "",
+        remarks: row.shift_type || "",
+      }))
+
+      const toKey = (day: string) => day.trim().toLowerCase()
+      const selectedDays = {
+        ...defaultSelectedDays,
+        ...schedules.reduce((acc: Record<string, boolean>, s) => {
+          const key = toKey(s.day)
+          if (key in defaultSelectedDays) acc[key] = true
+          return acc
+        }, {}),
+      }
+
+      setState({
+        modal_open: true,
+        isEditing: true,
+        editingId: detail?.name || shiftType.name,
+        name: detail?.name || shiftType.name,
+        shift_group_name: shiftGroupName,
+        selectedDays,
+        schedules,
+      })
+    } catch (error) {
+      console.error("Error fetching shift group details:", error)
+      toast.error("Failed to load shift group details")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleViewShiftType = (shiftType: ShiftType) => {
@@ -349,38 +368,51 @@ const TestPage = () => {
   }
 
   const toggleDay = (day: string) => {
+    const toTitleCase = (value: string) => value.charAt(0).toUpperCase() + value.slice(1)
+    const nextSelected = !state.selectedDays[day]
+
+    const nextSelectedDays = {
+      ...state.selectedDays,
+      [day]: nextSelected,
+    }
+
+    const dayTitle = toTitleCase(day)
+    const existingSchedules = state.schedules as ScheduleItem[]
+
+    const nextSchedules = nextSelected
+      ? existingSchedules.some((s) => s.day === dayTitle)
+        ? existingSchedules
+        : [
+            ...existingSchedules,
+            {
+              id: day,
+              day: dayTitle,
+              in_time: "",
+              out_time: "",
+              duration: 0,
+              start_date: "",
+              end_date: "",
+              remarks: "",
+            },
+          ]
+      : existingSchedules.filter((s) => s.day !== dayTitle)
+
     setState({
-      selectedDays: {
-        ...state.selectedDays,
-        [day]: !state.selectedDays[day]
-      }
+      selectedDays: nextSelectedDays,
+      schedules: nextSchedules,
     })
   }
 
   const fetchEmployees = async () => {
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://erp.thebenchmark.com.pk/api'
-      const erpToken = process.env.NEXT_PUBLIC_ERP_TOKEN || '25e8251c3cbaf25:6bd816c6a21d16e'
-      
-      const response = await fetch(`${apiUrl}/resource/Employee?fields=["name","employee_name"]&limit=false`, {
-        headers: {
-          'Authorization': `token ${erpToken}`,
-          'Content-Type': 'application/json',
-        }
-      })
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      
-      const result = await response.json()
-      
-      if (result.data) {
-        setState({ employees: result.data })
-        console.log("✅ Employees fetched successfully:", result.data)
+      const response: any = await apiClient.get(
+        '/resource/Employee?fields=["name","employee_name"]&limit_page_length=0'
+      )
+
+      if (response?.data) {
+        setState({ employees: response.data })
       } else {
         setState({ employees: [] })
-        console.log("No employees found")
       }
     } catch (error) {
       console.error("Error fetching employees:", error)
@@ -389,33 +421,7 @@ const TestPage = () => {
   }
 
   const addSchedule = () => {
-    fetchEmployees() // Fetch employees when opening the modal
-    setState({
-      schedule_modal_open: true,
-      scheduleForm: {
-        employee: "",
-        in_time: "",
-        out_time: "",
-        start_date: "",
-        end_date: "",
-        copy_to: {
-          monday: false,
-          tuesday: false,
-          wednesday: false,
-          thursday: false,
-          friday: false,
-          saturday: false,
-          sunday: false,
-        }
-      }
-    })
-    console.log("Schedule modal opened, form state:", {
-      employee: "",
-      in_time: "",
-      out_time: "",
-      start_date: "",
-      end_date: ""
-    })
+    toast.info("Select day(s) above to add schedule details")
   }
 
   const saveSchedule = async () => {
@@ -464,6 +470,7 @@ const TestPage = () => {
       // Add to local schedules for display
       const newSchedule: ScheduleItem = {
         id: Date.now().toString(),
+        day: "Monday",
         in_time: state.scheduleForm.in_time,
         out_time: state.scheduleForm.out_time,
         duration: 2.2, // You can calculate this based on in_time and out_time
@@ -512,6 +519,50 @@ const TestPage = () => {
         schedule.id === id ? { ...schedule, [field]: value } : schedule
       )
     })
+  }
+
+  const handleDeleteSlot = async (schedule: ScheduleItem) => {
+    try {
+      // If creating new (not yet saved), just remove from UI
+      if (!state.isEditing) {
+        removeSchedule(schedule.id)
+        setState({
+          selectedDays: {
+            ...state.selectedDays,
+            [schedule.day.toLowerCase()]: false,
+          },
+        })
+        return
+      }
+
+      if (!state.shift_group_name?.trim()) {
+        toast.error("Shift group name is missing")
+        return
+      }
+
+      setLoading(true)
+      const result: any = await apiClient.post(`/method/delete_shift_group`, {
+        shift_group_name: state.shift_group_name,
+        days: [{ day: schedule.day }],
+      })
+
+      console.log("✅ Shift slot deleted successfully:", result)
+      toast.success("Shift slot deleted successfully")
+
+      // Update UI
+      removeSchedule(schedule.id)
+      setState({
+        selectedDays: {
+          ...state.selectedDays,
+          [schedule.day.toLowerCase()]: false,
+        },
+      })
+    } catch (error) {
+      console.error("Error deleting shift slot:", error)
+      toast.error("Failed to delete shift slot")
+    } finally {
+      setLoading(false)
+    }
   }
 
   const columns = [
@@ -563,12 +614,12 @@ const TestPage = () => {
       searchable: true,
     },
     {
-      key: "custom_shift_name",
-      label: "Shift Name",
+      key: "shift_group_name",
+      label: "Shift Group Name",
       searchable: true,
       render: (row: unknown) => {
         const shift = row as ShiftType
-        return shift.custom_shift_name || "N/A"
+        return shift.shift_group_name || "N/A"
       },
     },
    
@@ -606,7 +657,17 @@ const TestPage = () => {
       {/* Modal */}
       <MuiDialog
         open={state.modal_open}
-        onClose={() => setState({ modal_open: false, isEditing: false, editingId: null })}
+        onClose={() =>
+          setState({
+            modal_open: false,
+            isEditing: false,
+            editingId: null,
+            shift_group_name: "",
+            employee: "",
+            selectedDays: defaultSelectedDays,
+            schedules: [],
+          })
+        }
         multiple_btn={true}
         title={state.isEditing ? "Edit Shift Type" : "Shift Type"}
         maxWidth="lg"
@@ -623,6 +684,19 @@ const TestPage = () => {
             </div>
             <div className="p-4">
               <div className="grid grid-cols-12 gap-4">
+                <div className="col-span-12 md:col-span-6">
+                  <CustomSelectField
+                    name="employee"
+                    label="Employee"
+                    value={state.employee}
+                    onChange={(e) => setState({ employee: e.target.value })}
+                    placeholder="Select Employee"
+                    options={(state.employees || []).map((emp: any) => ({
+                      label: `${emp.employee_name} (${emp.name})`,
+                      value: emp.name,
+                    }))}
+                  />
+                </div>
                 {state.formFields.map((field: any, idx: number) => (
                   <div key={idx} className={`col-span-12 md:col-span-${field.grid_size}`}>
                     {field.type === "select" ? (
@@ -713,6 +787,7 @@ const TestPage = () => {
                         <Checkbox size="small" />
                       </th>
                       <th className="p-3 border border-gray-300 text-left font-semibold w-12">S.No</th>
+                      <th className="p-3 border border-gray-300 text-left font-semibold">Day</th>
                       <th className="p-3 border border-gray-300 text-left font-semibold">In Time</th>
                       <th className="p-3 border border-gray-300 text-left font-semibold">Out Time</th>
                       <th className="p-3 border border-gray-300 text-left font-semibold">Duration</th>
@@ -730,6 +805,9 @@ const TestPage = () => {
                             <Checkbox size="small" />
                           </td>
                           <td className="p-3 border border-gray-300 text-center">{index + 1}</td>
+                          <td className="p-3 border border-gray-300">
+                            <div className="text-sm font-medium text-gray-800">{schedule.day}</div>
+                          </td>
                           <td className="p-3 border border-gray-300">
                             <input
                               type="time"
@@ -782,7 +860,7 @@ const TestPage = () => {
                           </td>
                           <td className="p-3 border border-gray-300 text-center">
                             <button
-                              onClick={() => removeSchedule(schedule.id)}
+                              onClick={() => handleDeleteSlot(schedule)}
                               className="p-1 hover:bg-red-100 rounded transition-colors text-red-600"
                               title="Remove schedule"
                             >
@@ -793,7 +871,7 @@ const TestPage = () => {
                       ))
                     ) : (
                       <tr>
-                        <td className="p-8 text-center text-gray-500" colSpan={9}>
+                        <td className="p-8 text-center text-gray-500" colSpan={10}>
                           <Calendar size={48} className="mx-auto mb-2 text-gray-300" />
                           <p>No schedules added yet. Click "Add Schedule" to get started.</p>
                         </td>
@@ -802,171 +880,6 @@ const TestPage = () => {
                   </tbody>
                 </table>
               </div>
-            </div>
-          </div>
-        </div>
-      </MuiDialog>
-
-      {/* Schedule Modal */}
-      <MuiDialog
-        open={state.schedule_modal_open}
-        onClose={() => setState({ schedule_modal_open: false })}
-        multiple_btn={true}
-        title="Schedule"
-        maxWidth="sm"
-        onSave={saveSchedule}
-      >
-        <div className="space-y-6">
-          {/* Employee Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Employee <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={state.scheduleForm.employee}
-              onChange={(e) => setState({ 
-                scheduleForm: { ...state.scheduleForm, employee: e.target.value }
-              })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">Select Employee</option>
-              {state.employees.map((emp: any) => (
-                <option key={emp.name} value={emp.name}>
-                  {emp.employee_name} ({emp.name})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Time and Date Fields */}
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  In Time <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="time"
-                    value={state.scheduleForm.in_time}
-                    onChange={(e) => {
-                      console.log("In time changed:", e.target.value)
-                      setState({ 
-                        scheduleForm: { ...state.scheduleForm, in_time: e.target.value }
-                      })
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Out Time <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="time"
-                    value={state.scheduleForm.out_time}
-                    onChange={(e) => {
-                      console.log("Out time changed:", e.target.value)
-                      setState({ 
-                        scheduleForm: { ...state.scheduleForm, out_time: e.target.value }
-                      })
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Start Date <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={state.scheduleForm.start_date}
-                    onChange={(e) => {
-                      console.log("Start date changed:", e.target.value)
-                      setState({ 
-                        scheduleForm: { ...state.scheduleForm, start_date: e.target.value }
-                      })
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  End Date <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="date"
-                    value={state.scheduleForm.end_date}
-                    onChange={(e) => {
-                      console.log("End date changed:", e.target.value)
-                      setState({ 
-                        scheduleForm: { ...state.scheduleForm, end_date: e.target.value }
-                      })
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Copy To Section */}
-          <div className="border-t border-gray-200 pt-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-gray-700">Copy To</h3>
-              <ChevronDown className="text-gray-400" size={16} />
-            </div>
-            <div className="flex flex-wrap gap-4">
-              {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
-                <label key={day} className="flex items-center space-x-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={state.scheduleForm.copy_to[day]}
-                    onChange={(e) => setState({
-                      scheduleForm: {
-                        ...state.scheduleForm,
-                        copy_to: {
-                          ...state.scheduleForm.copy_to,
-                          [day]: e.target.checked
-                        }
-                      }
-                    })}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="text-sm text-gray-700 capitalize">{day}</span>
-                </label>
-              ))}
             </div>
           </div>
         </div>
